@@ -6,14 +6,13 @@ import logging
 import os
 import queue
 import random
+import socket
 import threading
 import time
 import tkinter as tk
+from tkinter import ttk
 import uuid
 from datetime import datetime
-
-
-# This script uses DS18B20 temperature readings in a Tkinter monitor.
 
 try:
     from google.cloud import pubsub_v1
@@ -21,13 +20,13 @@ except Exception:
     pubsub_v1 = None
 
 # Combined monitor:
-# - Live mode (checkbox unchecked): DS18B20 on 1-wire
-# - Simulated mode (checkbox checked): random +/- 5C changes
-# - Publish mode (checkbox checked): publish to Pub/Sub
+# - Live mode (radio): DS18B20 on 1-wire
+# - Simulated mode (radio): random +/- 5C changes
+# - Publish mode (toggle button): publish to Pub/Sub
 
-GCP_PROJECT_ID = "YOUR_GCP_PROJECT_ID"
-PUBSUB_TOPIC_ID = "YOUR_TOPIC_ID"
-DEVICE_ID_DEFAULT = "dev-windows"
+GCP_PROJECT_ID = "project-e3a6924b-8583-4f8a-b9d"
+PUBSUB_TOPIC_ID = "cloudevent-topic"
+DEVICE_ID_DEFAULT = f"{socket.gethostname()}-pi"
 
 BASE_TEMP_C = 22.0
 MAX_VARIATION_C = 5.0
@@ -182,6 +181,7 @@ def publisher_worker(running_event, publish_queue, output_queue, log, is_publish
             spool_event(event_payload, log)
             output_queue.put(("status", "Publish failed: event spooled"))
             log.error("Publish failed for message_id=%s: %s", event_payload["message_id"], exc)
+            output_queue.put(("status", f"Pub/Sub init error: {exc}"))
         finally:
             publish_queue.task_done()
 
@@ -251,7 +251,7 @@ def main():
     publish_thread = None
 
     mode_lock = threading.Lock()
-    sim_mode_enabled = True  # default checked => Simulated mode
+    sim_mode_enabled = True
 
     publish_lock = threading.Lock()
     publish_enabled = False
@@ -261,18 +261,81 @@ def main():
 
     root = tk.Tk()
     root.title("Event Monitor")
+    root.geometry("880x620")
 
-    header_frame = tk.Frame(root)
-    header_frame.pack(fill="x", padx=10, pady=(10, 0))
+    style = ttk.Style(root)
+    try:
+        style.theme_use("clam")
+    except tk.TclError:
+        pass
 
-    title_label = tk.Label(header_frame, text="Event Monitor", font=("TkDefaultFont", 11, "bold"))
-    title_label.pack(side="left")
+    title_font = ("Segoe UI", 16, "bold")
+    subtitle_font = ("Segoe UI", 10)
+    temp_font = ("Segoe UI", 24, "bold")
+    status_font = ("Segoe UI", 10)
+    log_font = ("Consolas", 10)
 
-    toggle_frame = tk.Frame(header_frame)
-    toggle_frame.pack(side="right")
+    root.columnconfigure(0, weight=1)
+    root.rowconfigure(0, weight=1)
 
-    live_sim_var = tk.BooleanVar(value=True)
-    publish_var = tk.BooleanVar(value=False)
+    container = ttk.Frame(root, padding=14)
+    container.grid(row=0, column=0, sticky="nsew")
+    container.columnconfigure(0, weight=1)
+    container.rowconfigure(5, weight=1)
+
+    header_frame = ttk.Frame(container)
+    header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+    header_frame.columnconfigure(0, weight=1)
+
+    title_label = ttk.Label(header_frame, text="Event Monitor", font=title_font)
+    title_label.grid(row=0, column=0, sticky="w")
+
+    subtitle_label = ttk.Label(header_frame, text="Telemetry Publisher", font=subtitle_font)
+    subtitle_label.grid(row=1, column=0, sticky="w", pady=(2, 0))
+
+    controls_frame = ttk.Frame(header_frame)
+    controls_frame.grid(row=0, column=1, rowspan=2, sticky="e")
+
+    mode_label = ttk.Label(controls_frame, text="Mode:")
+    mode_label.grid(row=0, column=0, padx=(0, 6), sticky="w")
+
+    mode_var = tk.StringVar(value="sim")
+    live_radio = ttk.Radiobutton(controls_frame, text="Live", variable=mode_var, value="live")
+    live_radio.grid(row=0, column=1, padx=(0, 6))
+    sim_radio = ttk.Radiobutton(controls_frame, text="Simulated", variable=mode_var, value="sim")
+    sim_radio.grid(row=0, column=2, padx=(0, 12))
+
+    publish_button = ttk.Button(controls_frame, text="Enable Publishing")
+    publish_button.grid(row=0, column=3, padx=(0, 8))
+
+    publish_state_label = ttk.Label(controls_frame, text="Publishing: OFF")
+    publish_state_label.grid(row=0, column=4, sticky="w")
+
+    mode_state_label = ttk.Label(container, text="Mode: Simulated", font=subtitle_font)
+    mode_state_label.grid(row=1, column=0, sticky="w")
+
+    temp_label = ttk.Label(container, text="--.- C / --.- F", font=temp_font, anchor="center")
+    temp_label.grid(row=2, column=0, sticky="ew", pady=(8, 6))
+
+    status_label = ttk.Label(container, text="Status: Simulated mode selected", font=status_font, anchor="center")
+    status_label.grid(row=3, column=0, sticky="ew", pady=(0, 10))
+
+    ttk.Separator(container, orient="horizontal").grid(row=4, column=0, sticky="ew", pady=(0, 10))
+
+    log_group = ttk.LabelFrame(container, text="Change Log", padding=8)
+    log_group.grid(row=5, column=0, sticky="nsew")
+    log_group.columnconfigure(0, weight=1)
+    log_group.rowconfigure(0, weight=1)
+
+    log_text = tk.Text(log_group, height=12, state="disabled", wrap="word", font=log_font, relief="flat")
+    log_text.grid(row=0, column=0, sticky="nsew")
+
+    log_scrollbar = ttk.Scrollbar(log_group, orient="vertical", command=log_text.yview)
+    log_scrollbar.grid(row=0, column=1, sticky="ns")
+    log_text.configure(yscrollcommand=log_scrollbar.set)
+
+    button_frame = ttk.Frame(container)
+    button_frame.grid(row=6, column=0, sticky="e", pady=(12, 0))
 
     def append_log(message):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -289,12 +352,13 @@ def main():
         with publish_lock:
             return publish_enabled
 
-    def update_mode_from_toggle():
+    def update_mode_selection():
         nonlocal sim_mode_enabled
-        requested_sim = bool(live_sim_var.get())
+        requested_mode = mode_var.get()
+        requested_sim = requested_mode == "sim"
 
         if os.name == "nt" and not requested_sim:
-            live_sim_var.set(True)
+            mode_var.set("sim")
             requested_sim = True
             output_queue.put(("status", "Live mode is not supported on Windows; staying in Simulated"))
 
@@ -302,42 +366,31 @@ def main():
             sim_mode_enabled = requested_sim
 
         mode_text = "Simulated mode selected" if requested_sim else "Live mode selected"
+        mode_state_label.config(text="Mode: {}".format("Simulated" if requested_sim else "Live"))
         output_queue.put(("status", mode_text))
 
-    def update_publish_toggle():
+    def set_publish_ui_state():
+        if is_publish_enabled():
+            publish_button.config(text="Disable Publishing")
+            publish_state_label.config(text="Publishing: ON")
+        else:
+            publish_button.config(text="Enable Publishing")
+            publish_state_label.config(text="Publishing: OFF")
+
+    def toggle_publish_state():
         nonlocal publish_enabled
         with publish_lock:
-            publish_enabled = bool(publish_var.get())
-        if publish_enabled:
+            publish_enabled = not publish_enabled
+            now_enabled = publish_enabled
+        set_publish_ui_state()
+        if now_enabled:
             output_queue.put(("status", "Publish enabled"))
         else:
             output_queue.put(("status", "Publish disabled: events will be spooled"))
 
-    tk.Label(toggle_frame, text="Live").pack(side="left", padx=(0, 4))
-    tk.Checkbutton(toggle_frame, variable=live_sim_var, command=update_mode_from_toggle).pack(side="left")
-    tk.Label(toggle_frame, text="Simulated").pack(side="left", padx=(4, 10))
-
-    tk.Label(toggle_frame, text="Publish").pack(side="left", padx=(0, 4))
-    tk.Checkbutton(toggle_frame, variable=publish_var, command=update_publish_toggle).pack(side="left")
-
-    temp_label = tk.Label(root, text="Temperature: --.- C / --.- F")
-    temp_label.pack(padx=10, pady=5)
-
-    status_label = tk.Label(root, text="Status: Simulated mode selected")
-    status_label.pack(padx=10, pady=5)
-
-    log_frame = tk.Frame(root)
-    log_frame.pack(padx=10, pady=5, fill="both", expand=True)
-
-    log_label = tk.Label(log_frame, text="Change Log")
-    log_label.pack(anchor="w")
-
-    log_scrollbar = tk.Scrollbar(log_frame)
-    log_scrollbar.pack(side="right", fill="y")
-
-    log_text = tk.Text(log_frame, height=10, state="disabled", yscrollcommand=log_scrollbar.set)
-    log_text.pack(side="left", fill="both", expand=True)
-    log_scrollbar.config(command=log_text.yview)
+    mode_var.trace_add("write", lambda *_: update_mode_selection())
+    publish_button.config(command=toggle_publish_state)
+    set_publish_ui_state()
 
     def ensure_publisher_thread():
         nonlocal publish_thread
@@ -385,7 +438,7 @@ def main():
 
                 if message[0] == "temp":
                     _, temp_c, temp_f = message
-                    temp_label.config(text="Temperature: {temp_c:.3f} C / {temp_f:.3f} F".format(temp_c=temp_c, temp_f=temp_f))
+                    temp_label.config(text="{temp_c:.3f} C / {temp_f:.3f} F".format(temp_c=temp_c, temp_f=temp_f))
                     current_temp = (round(temp_c, 3), round(temp_f, 3))
                     if current_temp != last_temp:
                         append_log("Temp changed to {temp_c:.3f} C / {temp_f:.3f} F".format(temp_c=temp_c, temp_f=temp_f))
@@ -401,8 +454,10 @@ def main():
 
                 elif message[0] == "force_sim":
                     _, status = message
-                    live_sim_var.set(True)
-                    update_mode_from_toggle()
+                    mode_var.set("sim")
+                    with mode_lock:
+                        sim_mode_enabled = True
+                    mode_state_label.config(text="Mode: Simulated")
                     status_label.config(text="Status: {status}".format(status=status))
                     append_log(status)
                     log.info("status=%s", status)
@@ -425,12 +480,9 @@ def main():
 
         root.destroy()
 
-    button_frame = tk.Frame(root)
-    button_frame.pack(padx=10, pady=10)
-
-    tk.Button(button_frame, text="Start Temp", command=start_temp).grid(row=0, column=0, padx=5, pady=5)
-    tk.Button(button_frame, text="Stop Temp", command=stop_temp).grid(row=0, column=1, padx=5, pady=5)
-    tk.Button(button_frame, text="Quit", command=shutdown).grid(row=1, column=0, columnspan=2, padx=5, pady=10)
+    ttk.Button(button_frame, text="Start Temp", command=start_temp).grid(row=0, column=0, padx=(0, 8))
+    ttk.Button(button_frame, text="Stop Temp", command=stop_temp).grid(row=0, column=1, padx=(0, 8))
+    ttk.Button(button_frame, text="Quit", command=shutdown).grid(row=0, column=2)
 
     root.after(200, process_queue)
     root.protocol("WM_DELETE_WINDOW", shutdown)
@@ -439,4 +491,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
