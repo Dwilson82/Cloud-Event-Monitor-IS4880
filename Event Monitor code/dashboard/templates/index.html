@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Data Center Dashboard</title>
+
+<style>
+
+/* BACKGROUND */
+body {
+    margin: 0;
+    font-family: Arial;
+    color: white;
+    display: flex;
+
+    background:
+        radial-gradient(circle at 20% 20%, rgba(59,130,246,0.2), transparent),
+        radial-gradient(circle at 80% 80%, rgba(168,85,247,0.2), transparent),
+        #020617;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 80px;
+    background: rgba(15,23,42,0.9);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+}
+
+.sidebar div {
+    margin: 20px 0;
+    font-size: 20px;
+}
+
+/* MAIN */
+.main {
+    flex: 1;
+    padding: 30px;
+}
+
+/* GRID */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+/* CARDS */
+.card {
+    background: rgba(30,41,59,0.4);
+    backdrop-filter: blur(20px);
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,0.05);
+
+    box-shadow:
+        0 0 10px rgba(59,130,246,0.3),
+        0 0 30px rgba(168,85,247,0.2);
+
+    transition: 0.3s;
+}
+
+.card:hover {
+    box-shadow:
+        0 0 20px rgba(59,130,246,0.6),
+        0 0 60px rgba(168,85,247,0.4);
+}
+
+/* SIZES */
+.large { grid-column: span 2; }
+.full { grid-column: span 3; }
+
+/* TEXT */
+.big {
+    font-size: 26px;
+    font-weight: bold;
+}
+
+h1 {
+    text-shadow: 0 0 10px rgba(59,130,246,0.7);
+}
+
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+tr:hover {
+    background: rgba(59,130,246,0.1);
+}
+
+.duplicate {
+    background: rgba(220,38,38,0.3);
+}
+
+/* BADGES */
+.badge {
+    padding: 6px 12px;
+    border-radius: 10px;
+}
+
+.ok {
+    background: #22c55e;
+    box-shadow: 0 0 10px #22c55e;
+}
+
+.dup {
+    background: #ef4444;
+    box-shadow: 0 0 10px #ef4444;
+}
+
+/* FILTER */
+select {
+    margin-bottom: 10px;
+    background: rgba(30,41,59,0.6);
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div>🏠</div>
+    <div>📄</div>
+    <div>📊</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<h1>🖥 Data Center Dashboard</h1>
+<p>Real-Time Pub/Sub Monitoring</p>
+
+<div class="grid">
+
+    <!-- STATS -->
+    <div class="card">
+        <h3>Total Events</h3>
+        <div class="big" id="total">0</div>
+    </div>
+
+    <div class="card">
+        <h3>Duplicates</h3>
+        <div class="big" id="dups">0</div>
+    </div>
+
+    <div class="card">
+        <h3>Average Temp</h3>
+        <div class="big" id="avg">--</div>
+    </div>
+
+    <!-- GRAPH AREA -->
+    <div class="card large">
+        <h3>System Activity</h3>
+        <p style="opacity:0.6;">( Insert chart here)</p>
+    </div>
+
+    <div class="card">
+        <h3>Status</h3>
+        <p style="color:#22c55e;">System Running</p>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card full">
+
+        <h3>Event Log</h3>
+
+        <select id="filter" onchange="applyFilter()">
+            <option value="all">All Events</option>
+            <option value="dup">Duplicates Only</option>
+            <option value="ok">Unique Only</option>
+        </select>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Temp</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody id="tableBody"></tbody>
+        </table>
+
+    </div>
+
+</div>
+
+</div>
+
+<script>
+
+let allEvents = [];
+
+async function loadData() {
+    const res = await fetch('/api/events');
+    allEvents = await res.json();
+    render(allEvents);
+}
+
+function render(data) {
+    let html = "";
+
+    data.forEach(e => {
+        html += `
+        <tr class="${e.duplicate ? 'duplicate' : ''}">
+            <td>${e.id}</td>
+            <td>${e.temp} °C</td>
+            <td>${e.time}</td>
+            <td>
+                <span class="badge ${e.duplicate ? 'dup' : 'ok'}">
+                    ${e.duplicate ? 'Duplicate' : 'OK'}
+                </span>
+            </td>
+        </tr>`;
+    });
+
+    document.getElementById("tableBody").innerHTML = html;
+
+    document.getElementById("total").innerText = allEvents.length;
+
+    let dupCount = allEvents.filter(e => e.duplicate).length;
+    document.getElementById("dups").innerText = dupCount;
+
+    let avg =
+        allEvents.reduce((sum, e) => sum + e.temp, 0) / allEvents.length;
+
+    document.getElementById("avg").innerText = avg.toFixed(1) + " °C";
+}
+
+function applyFilter() {
+    let val = document.getElementById("filter").value;
+
+    if (val === "dup") {
+        render(allEvents.filter(e => e.duplicate));
+    } else if (val === "ok") {
+        render(allEvents.filter(e => !e.duplicate));
+    } else {
+        render(allEvents);
+    }
+}
+
+// AUTO LIVE UPDATE
+setInterval(loadData, 2000);
+
+loadData();
+
+</script>
+
+</body>
+</html>

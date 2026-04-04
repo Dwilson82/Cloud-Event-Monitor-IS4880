@@ -1,38 +1,17 @@
 from flask import Flask, render_template, jsonify
-import random
-import time
+import pymysql
+import os
 
 app = Flask(__name__)
 
-events = []
-seen_messages = set()  # track duplicates
-
-def generate_event():
-
-    # simulate duplicate
-    if events and random.random() < 0.3:
-        old = random.choice(events)
-        msg_id = old["id"]
-        temp = old["temp"]
-    else:
-        msg_id = "MSG-" + str(int(time.time() * 1000))
-        temp = round(random.uniform(20, 30), 1)
-
-    key = (msg_id, temp)
-
-    # the duplicate detection
-    if key in seen_messages:
-        duplicate = True
-    else:
-        duplicate = False
-        seen_messages.add(key)
-
-    return {
-        "id": msg_id,
-        "temp": temp,
-        "time": time.strftime("%H:%M:%S"),
-        "duplicate": duplicate
-    }
+def get_db_connection():
+    return pymysql.connect(
+        unix_socket="/cloudsql/project-e3a6924b-8583-4f8a-b9d:us-east1:cloudservereventmonitor",
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASS"],
+        database=os.environ["DB_NAME"],
+        cursorclass=pymysql.cursors.DictCursor
+    )
 
 @app.route("/")
 def index():
@@ -40,8 +19,40 @@ def index():
 
 @app.route("/api/events")
 def get_events():
-    events.append(generate_event())
-    return jsonify(events[-20:])
+    conn = None
+    try:
+        print("=== API CALLED ===")
 
-if __name__ == "__main__":
-    app.run(port=5001, debug=True)
+        conn = get_db_connection()
+        print("DB connection successful")
+
+        with conn.cursor() as cursor:
+            print("Running query...")
+
+            cursor.execute("""
+                SELECT
+                    message_id AS id,
+                    temp_c AS temp,
+                    DATE_FORMAT(timestamp_utc, '%H:%i:%s') AS time,
+                    is_duplicate AS duplicate
+                FROM messages
+                ORDER BY timestamp_utc DESC
+                LIMIT 20
+            """)
+
+            rows = cursor.fetchall()
+            print(f"Rows fetched: {len(rows)}")
+
+        for row in rows:
+            row["duplicate"] = bool(row["duplicate"])
+
+        return jsonify(rows)
+
+    except Exception as e:
+        print("🔥 FULL ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+    
