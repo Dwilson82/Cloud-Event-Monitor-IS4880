@@ -11,7 +11,6 @@ import threading
 import time
 import tkinter as tk
 from tkinter import ttk
-import uuid
 from datetime import datetime
 
 try:
@@ -38,6 +37,15 @@ DEFAULT_CONFIG = {
     "sim_min_temp": -20,
     "sim_max_temp": 35,
     "alerts_enabled": True,
+    "duplicate_sim_enabled": False,
+    "duplicate_rate_percent": 5,
+    "id_counters": {},
+}
+
+EVENT_TYPE_CODE_MAP = {
+    "TEMP_READING": "TEMP",
+    "TEMP_THRESHOLD_EXCEEDED": "ALERT",
+    "TEMP_THRESHOLD_RECOVERED": "REC",
 }
 
 BASE_TEMP_C = 22.0
@@ -63,7 +71,11 @@ def load_config(log):
 
         if isinstance(loaded, dict):
             config.update(loaded)
-            if "alerts_enabled" not in loaded:
+            if not isinstance(config.get("id_counters"), dict):
+                config["id_counters"] = {}
+
+            missing = [key for key in DEFAULT_CONFIG if key not in loaded]
+            if missing:
                 save_config(config, log)
         else:
             log.error("Invalid config format. Recreating with defaults")
@@ -81,6 +93,38 @@ def save_config(config, log):
             json.dump(config, config_file, indent=2)
     except Exception as exc:
         log.error("Failed to write config file: %s", exc)
+
+
+def next_series_value(series):
+    if not isinstance(series, str) or len(series) != 4:
+        return "AA01"
+
+    letters = series[:2]
+    digits = series[2:]
+
+    if not letters.isalpha() or not digits.isdigit():
+        return "AA01"
+
+    number = int(digits)
+    if number < 1 or number > 99:
+        return "AA01"
+
+    if number < 99:
+        return f"{letters.upper()}{number + 1:02d}"
+
+    first = ord(letters[0].upper()) - ord("A")
+    second = ord(letters[1].upper()) - ord("A")
+    if first < 0 or first > 25 or second < 0 or second > 25:
+        return "AA01"
+
+    second += 1
+    if second > 25:
+        second = 0
+        first += 1
+        if first > 25:
+            first = 0
+
+    return f"{chr(first + ord('A'))}{chr(second + ord('A'))}01"
 
 
 def init_ds18b20(log):
@@ -133,9 +177,9 @@ def read_temp_live(log):
     return temp_c, temp_f
 
 
-def build_event_payload(device_id, mode, temp_c, temp_f, sequence, event_type="TEMP_READING", extra_fields=None):
+def build_event_payload(device_id, mode, temp_c, temp_f, sequence, message_id, event_type="TEMP_READING", extra_fields=None):
     payload = {
-        "message_id": str(uuid.uuid4()),
+        "message_id": message_id,
         "device_id": device_id,
         "mode": mode,
         "temp_c": temp_c,
@@ -173,6 +217,7 @@ def publisher_worker(running_event, publish_queue, output_queue, log, is_publish
     topic_path = None
     fallback_spool_only = False
     fallback_status_sent = False
+    published_ids = set()
 
     if pubsub_v1 is None:
         fallback_spool_only = True
@@ -189,6 +234,8 @@ def publisher_worker(running_event, publish_queue, output_queue, log, is_publish
             event_payload = publish_queue.get(timeout=0.2)
         except queue.Empty:
             continue
+
+        is_duplicate = event_payload["message_id"] in published_ids
 
         if fallback_spool_only:
             spool_event(event_payload, log)
@@ -216,13 +263,19 @@ def publisher_worker(running_event, publish_queue, output_queue, log, is_publish
                 event_type=event_payload["event_type"],
             )
             pubsub_id = future.result(timeout=5)
-            output_queue.put(("status", "Published event {}".format(event_payload["sequence"])))
+
+            if is_duplicate:
+                output_queue.put(("status", f"Published duplicate event {event_payload['message_id']}"))
+            else:
+                output_queue.put(("status", f"Published event {event_payload['message_id']}"))
+
             log.info(
                 "Published pubsub_id=%s message_id=%s sequence=%s",
                 pubsub_id,
                 event_payload["message_id"],
                 event_payload["sequence"],
             )
+            published_ids.add(event_payload["message_id"])
         except Exception as exc:
             spool_event(event_payload, log)
             output_queue.put(("status", "Publish failed: event spooled"))
@@ -232,7 +285,7 @@ def publisher_worker(running_event, publish_queue, output_queue, log, is_publish
             publish_queue.task_done()
 
 
-def temp_worker(running_event, output_queue, publish_queue, log, is_sim_mode, is_publish_enabled, get_config):
+def temp_worker(running_event, output_queue, publish_queue, log, is_sim_mode, is_publish_enabled, get_config, next_message_id):
     current_temp_c = BASE_TEMP_C
     last_mode = None
     sequence = 0
@@ -263,6 +316,8 @@ def temp_worker(running_event, output_queue, publish_queue, log, is_sim_mode, is
             threshold_low = float(config["temp_low_threshold"])
             threshold_high = float(config["temp_high_threshold"])
             alerts_enabled = bool(config.get("alerts_enabled", True))
+            duplicate_enabled = bool(config.get("duplicate_sim_enabled", False))
+            duplicate_rate_percent = max(0.0, min(100.0, float(config.get("duplicate_rate_percent", 5))))
             publish_interval = max(0.1, float(config["publish_interval"]))
 
             if sim_mode:
@@ -326,21 +381,28 @@ def temp_worker(running_event, output_queue, publish_queue, log, is_sim_mode, is
                 mode = "live"
 
             sequence += 1
-            event_payload = build_event_payload(device_id, mode, temp_c, temp_f, sequence)
+            message_id = next_message_id(mode, "TEMP_READING")
+            event_payload = build_event_payload(device_id, mode, temp_c, temp_f, sequence, message_id)
             publish_queue.put(event_payload)
 
-            if sim_mode and alerts_enabled:
+            if duplicate_enabled and random.random() * 100.0 < duplicate_rate_percent:
+                publish_queue.put(dict(event_payload))
+                output_queue.put(("status", f"Queued duplicate event {event_payload['message_id']}"))
+
+            if alerts_enabled:
                 is_out_of_threshold = temp_c < threshold_low or temp_c > threshold_high
 
                 if not in_alert_state and is_out_of_threshold:
                     in_alert_state = True
                     sequence += 1
+                    threshold_message_id = next_message_id(mode, "TEMP_THRESHOLD_EXCEEDED")
                     threshold_payload = build_event_payload(
                         device_id,
                         mode,
                         temp_c,
                         temp_f,
                         sequence,
+                        threshold_message_id,
                         event_type="TEMP_THRESHOLD_EXCEEDED",
                         extra_fields={
                             "temperature_c": temp_c,
@@ -358,15 +420,21 @@ def temp_worker(running_event, output_queue, publish_queue, log, is_sim_mode, is
                         )
                     )
 
+                    if duplicate_enabled and random.random() * 100.0 < duplicate_rate_percent:
+                        publish_queue.put(dict(threshold_payload))
+                        output_queue.put(("status", f"Queued duplicate event {threshold_payload['message_id']}"))
+
                 elif in_alert_state and not is_out_of_threshold:
                     in_alert_state = False
                     sequence += 1
+                    recover_message_id = next_message_id(mode, "TEMP_THRESHOLD_RECOVERED")
                     recover_payload = build_event_payload(
                         device_id,
                         mode,
                         temp_c,
                         temp_f,
                         sequence,
+                        recover_message_id,
                         event_type="TEMP_THRESHOLD_RECOVERED",
                         extra_fields={
                             "temperature_c": temp_c,
@@ -378,6 +446,10 @@ def temp_worker(running_event, output_queue, publish_queue, log, is_sim_mode, is
                     )
                     publish_queue.put(recover_payload)
                     output_queue.put(("status", f"{device_id} TEMP_THRESHOLD_RECOVERED temp={temp_c:.1f}C"))
+
+                    if duplicate_enabled and random.random() * 100.0 < duplicate_rate_percent:
+                        publish_queue.put(dict(recover_payload))
+                        output_queue.put(("status", f"Queued duplicate event {recover_payload['message_id']}"))
 
             time.sleep(publish_interval)
 
@@ -522,11 +594,29 @@ def main():
         with config_lock:
             config.update(new_config)
 
+    def next_message_id(mode, event_type):
+        with config_lock:
+            device_prefix = "sim" if mode == "sim" else "rpi"
+            type_code = EVENT_TYPE_CODE_MAP.get(event_type, "EVT")
+            counter_key = f"{device_prefix}-{type_code}"
+
+            id_counters = config.setdefault("id_counters", {})
+            if not isinstance(id_counters, dict):
+                id_counters = {}
+                config["id_counters"] = id_counters
+
+            current_series = id_counters.get(counter_key, "AA00")
+            next_series = next_series_value(current_series)
+            id_counters[counter_key] = next_series
+            save_config(config, log)
+
+            return f"{device_prefix}-{type_code}-{next_series}"
+
     def open_config_window():
         config_snapshot = get_config()
         config_window = tk.Toplevel(root)
         config_window.title("Publisher Configuration")
-        config_window.geometry("460x560")
+        config_window.geometry("460x620")
         config_window.transient(root)
         config_window.grab_set()
 
@@ -596,11 +686,25 @@ def main():
             row=next_row + 1, column=0, columnspan=2, sticky="w", pady=2
         )
 
+        tk.Label(body, text="Duplicate Simulation", font=("Segoe UI", 10, "bold")).grid(
+            row=next_row + 2, column=0, columnspan=2, sticky="w", pady=(8, 4)
+        )
+        duplicate_enabled_var = tk.BooleanVar(value=bool(config_snapshot.get("duplicate_sim_enabled", False)))
+        tk.Checkbutton(body, text="Enable Duplicate Simulation", variable=duplicate_enabled_var).grid(
+            row=next_row + 3, column=0, columnspan=2, sticky="w", pady=2
+        )
+
+        tk.Label(body, text="Duplicate Rate (%)").grid(row=next_row + 4, column=0, sticky="w", pady=2)
+        duplicate_rate_entry = tk.Entry(body, width=28)
+        duplicate_rate_entry.insert(0, str(config_snapshot.get("duplicate_rate_percent", 5)))
+        duplicate_rate_entry.grid(row=next_row + 4, column=1, sticky="ew", padx=(10, 0), pady=2)
+
         button_row = tk.Frame(body)
-        button_row.grid(row=next_row + 2, column=0, columnspan=2, sticky="e", pady=(16, 0))
+        button_row.grid(row=next_row + 5, column=0, columnspan=2, sticky="e", pady=(16, 0))
 
         def save_and_close():
             try:
+                duplicate_rate_percent = float(duplicate_rate_entry.get())
                 updated_config = {
                     "device_id_live": all_entries["device_id_live"].get().strip() or DEFAULT_CONFIG["device_id_live"],
                     "device_id_sim": all_entries["device_id_sim"].get().strip() or DEFAULT_CONFIG["device_id_sim"],
@@ -610,6 +714,8 @@ def main():
                     "sim_min_temp": float(all_entries["sim_min_temp"].get()),
                     "sim_max_temp": float(all_entries["sim_max_temp"].get()),
                     "alerts_enabled": bool(alerts_enabled_var.get()),
+                    "duplicate_sim_enabled": bool(duplicate_enabled_var.get()),
+                    "duplicate_rate_percent": duplicate_rate_percent,
                 }
             except ValueError:
                 output_queue.put(("status", "Invalid configuration values"))
@@ -617,6 +723,10 @@ def main():
 
             if updated_config["sim_min_temp"] > updated_config["sim_max_temp"]:
                 output_queue.put(("status", "Simulation min temp cannot exceed max temp"))
+                return
+
+            if updated_config["duplicate_rate_percent"] < 0 or updated_config["duplicate_rate_percent"] > 100:
+                output_queue.put(("status", "Duplicate rate must be between 0 and 100"))
                 return
 
             set_config(updated_config)
@@ -692,7 +802,7 @@ def main():
         temp_running.set()
         temp_thread = threading.Thread(
             target=temp_worker,
-            args=(temp_running, output_queue, publish_queue, log, is_sim_mode, is_publish_enabled, get_config),
+            args=(temp_running, output_queue, publish_queue, log, is_sim_mode, is_publish_enabled, get_config, next_message_id),
             daemon=True,
         )
         temp_thread.start()
