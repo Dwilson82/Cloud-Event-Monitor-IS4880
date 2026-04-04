@@ -252,89 +252,129 @@
         </div>
     </div>
 
-    <script>
-        let allEvents = [];
-        let tempChart = null;
+<script>
+    let allEvents = [];
+    let tempChart = null;
 
-        function showSection(sectionId, btn) {
-            document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-            document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+    function showSection(sectionId, btn) {
+        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
 
-            document.getElementById(sectionId).classList.add("active");
-            btn.classList.add("active");
-        }
+        document.getElementById(sectionId).classList.add("active");
+        btn.classList.add("active");
+    }
 
-        async function loadMetrics() {
+    async function loadMetrics() {
+        try {
             const res = await fetch('/api/metrics');
             const data = await res.json();
 
-            document.getElementById("total").innerText = data.total;
-            document.getElementById("dups").innerText = data.dups;
-            document.getElementById("avg").innerText = data.avg_temp + " °C";
+            if (data.error) {
+                console.error("Metrics API error:", data.error);
+                return;
+            }
+
+            document.getElementById("total").innerText = data.total ?? 0;
+            document.getElementById("dups").innerText = data.dups ?? 0;
+            document.getElementById("avg").innerText = (data.avg_temp ?? 0) + " °C";
 
             const dupRate = data.total > 0 ? ((data.dups / data.total) * 100).toFixed(1) : 0;
             document.getElementById("dupRate").innerText = dupRate + "%";
+        } catch (err) {
+            console.error("loadMetrics failed:", err);
         }
+    }
 
-        async function loadChart() {
+    async function loadChart() {
+        try {
+            if (typeof Chart === "undefined") {
+                console.error("Chart.js failed to load.");
+                return;
+            }
+
             const res = await fetch('/api/chart-data');
             const data = await res.json();
 
-            const canvas = document.getElementById('tempChart');
-            if (!canvas) return;
+            if (data.error) {
+                console.error("Chart API error:", data.error);
+                return;
+            }
 
-            const ctx = canvas.getContext('2d');
+            const canvas = document.getElementById("tempChart");
+            if (!canvas) {
+                console.error("Canvas #tempChart not found.");
+                return;
+            }
+
+            const ctx = canvas.getContext("2d");
 
             if (tempChart) {
                 tempChart.destroy();
             }
 
             tempChart = new Chart(ctx, {
-                type: 'line',
+                type: "line",
                 data: {
-                    labels: data.labels,
+                    labels: data.labels || [],
                     datasets: [{
-                        label: 'Temp °C',
-                        data: data.temps,
-                        borderColor: 'rgba(59,130,246,1)',
-                        backgroundColor: 'rgba(59,130,246,0.2)',
+                        label: "Temp °C",
+                        data: data.temps || [],
+                        borderColor: "rgba(59,130,246,1)",
+                        backgroundColor: "rgba(59,130,246,0.2)",
                         tension: 0.3,
                         fill: true
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            labels: { color: 'white' }
+                            labels: { color: "white" }
                         }
                     },
                     scales: {
                         x: {
-                            ticks: { color: 'white' },
-                            grid: { color: 'rgba(255,255,255,0.08)' }
+                            ticks: { color: "white" },
+                            grid: { color: "rgba(255,255,255,0.08)" }
                         },
                         y: {
-                            ticks: { color: 'white' },
-                            grid: { color: 'rgba(255,255,255,0.08)' }
+                            ticks: { color: "white" },
+                            grid: { color: "rgba(255,255,255,0.08)" }
                         }
                     }
                 }
             });
-        }
 
-        async function loadData() {
+            console.log("Chart rendered successfully");
+        } catch (err) {
+            console.error("loadChart failed:", err);
+        }
+    }
+
+    async function loadData() {
+        try {
             const res = await fetch('/api/events');
-            allEvents = await res.json();
+            const data = await res.json();
+
+            if (data.error) {
+                console.error("Events API error:", data.error);
+                return;
+            }
+
+            allEvents = data;
             render(allEvents);
             updateAnalytics();
+        } catch (err) {
+            console.error("loadData failed:", err);
         }
+    }
 
-        function render(data) {
-            let html = "";
+    function render(data) {
+        let html = "";
 
-            data.forEach(e => {
-                html += `
+        data.forEach(e => {
+            html += `
                 <tr class="${e.duplicate ? 'duplicate' : ''}">
                     <td>${e.id}</td>
                     <td>${e.device_id || '--'}</td>
@@ -346,45 +386,43 @@
                         </span>
                     </td>
                 </tr>`;
-            });
-
-            document.getElementById("tableBody").innerHTML = html;
-        }
-
-        function updateAnalytics() {
-            if (!allEvents.length) return;
-
-            const latest = allEvents[0];
-            document.getElementById("latestDevice").innerText = latest.device_id || "--";
-            document.getElementById("latestTemp").innerText = latest.temp + " °C";
-            document.getElementById("lastTime").innerText = latest.time;
-            document.getElementById("latestReading").innerText = `${latest.temp} °C @ ${latest.time}`;
-        }
-
-        function applyFilter() {
-            let val = document.getElementById("filter").value;
-
-            if (val === "dup") {
-                render(allEvents.filter(e => e.duplicate));
-            } else if (val === "ok") {
-                render(allEvents.filter(e => !e.duplicate));
-            } else {
-                render(allEvents);
-            }
-        }
-
-        async function refreshAll() {
-            await Promise.all([
-                loadMetrics(),
-                loadData(),
-                loadChart()
-            ]);
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            refreshAll();
-            setInterval(refreshAll, 4000);
         });
-    </script>
+
+        document.getElementById("tableBody").innerHTML = html;
+    }
+
+    function updateAnalytics() {
+        if (!allEvents.length) return;
+
+        const latest = allEvents[0];
+        document.getElementById("latestDevice").innerText = latest.device_id || "--";
+        document.getElementById("latestTemp").innerText = latest.temp + " °C";
+        document.getElementById("lastTime").innerText = latest.time;
+        document.getElementById("latestReading").innerText = `${latest.temp} °C @ ${latest.time}`;
+    }
+
+    function applyFilter() {
+        let val = document.getElementById("filter").value;
+
+        if (val === "dup") {
+            render(allEvents.filter(e => e.duplicate));
+        } else if (val === "ok") {
+            render(allEvents.filter(e => !e.duplicate));
+        } else {
+            render(allEvents);
+        }
+    }
+
+    async function refreshAll() {
+        await loadMetrics();
+        await loadData();
+        await loadChart();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        refreshAll();
+        setInterval(refreshAll, 4000);
+    });
+</script>
 </body>
 </html>
