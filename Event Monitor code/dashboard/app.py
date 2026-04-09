@@ -4,6 +4,7 @@ import os
 
 app = Flask(__name__)
 
+
 def get_db_connection():
     return pymysql.connect(
         unix_socket="/cloudsql/project-e3a6924b-8583-4f8a-b9d:us-east1:cloudservereventmonitor",
@@ -13,6 +14,15 @@ def get_db_connection():
         cursorclass=pymysql.cursors.DictCursor
     )
 
+
+def f_to_c(temp_f):
+    return (float(temp_f) - 32.0) * 5.0 / 9.0
+
+
+def c_to_f(temp_c):
+    return (float(temp_c) * 9.0 / 5.0) + 32.0
+
+
 def get_current_settings(cursor):
     cursor.execute("""
         SELECT warning_temp_f, critical_temp_f, alert_enabled
@@ -21,18 +31,34 @@ def get_current_settings(cursor):
         LIMIT 1
     """)
     row = cursor.fetchone()
+
     if not row:
+        warning_c = f_to_c(80.0)
+        critical_c = f_to_c(90.0)
         return {
-            "warning_temp_f": 80.0,
-            "critical_temp_f": 90.0,
+            "warning_temp": round(warning_c, 1),
+            "critical_temp": round(critical_c, 1),
+            "warning_temp_f": round(warning_c, 1),   # compatibility alias for current frontend
+            "critical_temp_f": round(critical_c, 1), # compatibility alias for current frontend
             "alert_enabled": True
         }
-    row["alert_enabled"] = bool(row["alert_enabled"])
-    return row
+
+    warning_c = f_to_c(row["warning_temp_f"])
+    critical_c = f_to_c(row["critical_temp_f"])
+
+    return {
+        "warning_temp": round(warning_c, 1),
+        "critical_temp": round(critical_c, 1),
+        "warning_temp_f": round(warning_c, 1),   # compatibility alias for current frontend
+        "critical_temp_f": round(critical_c, 1), # compatibility alias for current frontend
+        "alert_enabled": bool(row["alert_enabled"])
+    }
+
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/api/events")
 def get_events():
@@ -49,7 +75,7 @@ def get_events():
                     is_duplicate AS duplicate
                 FROM messages
                 ORDER BY timestamp_utc DESC
-               LIMIT 300
+                LIMIT 300
             """)
             rows = cursor.fetchall()
 
@@ -65,6 +91,7 @@ def get_events():
         if conn:
             conn.close()
 
+
 @app.route("/api/metrics")
 def get_metrics():
     conn = None
@@ -79,39 +106,44 @@ def get_metrics():
             cursor.execute("SELECT COUNT(*) AS dups FROM messages WHERE is_duplicate = 1")
             dups = cursor.fetchone()["dups"]
 
-            cursor.execute("SELECT AVG(temp_f) AS avg_temp_f FROM messages")
-            avg_temp = cursor.fetchone()["avg_temp_f"]
+            cursor.execute("SELECT AVG(temp_c) AS avg_temp FROM messages")
+            avg_temp = cursor.fetchone()["avg_temp"]
 
             cursor.execute("""
                 SELECT COUNT(*) AS warning_count
                 FROM messages
-                WHERE temp_f >= %s AND temp_f < %s
-            """, (settings["warning_temp_f"], settings["critical_temp_f"]))
+                WHERE temp_c >= %s AND temp_c < %s
+            """, (settings["warning_temp"], settings["critical_temp"]))
             warning_count = cursor.fetchone()["warning_count"]
 
             cursor.execute("""
                 SELECT COUNT(*) AS critical_count
                 FROM messages
-                WHERE temp_f >= %s
-            """, (settings["critical_temp_f"],))
+                WHERE temp_c >= %s
+            """, (settings["critical_temp"],))
             critical_count = cursor.fetchone()["critical_count"]
 
             cursor.execute("""
-                SELECT MAX(temp_f) AS max_temp_f
+                SELECT MAX(temp_c) AS max_temp
                 FROM messages
             """)
-            max_temp = cursor.fetchone()["max_temp_f"]
+            max_temp = cursor.fetchone()["max_temp"]
 
         out_of_range = warning_count + critical_count
         out_of_range_pct = round((out_of_range / total) * 100, 1) if total > 0 else 0
 
+        avg_temp_val = round(avg_temp, 1) if avg_temp is not None else 0
+        max_temp_val = round(max_temp, 1) if max_temp is not None else 0
+
         return jsonify({
             "total": total,
             "dups": dups,
-            "avg_temp_f": round(avg_temp, 1) if avg_temp is not None else 0,
+            "avg_temp": avg_temp_val,
+            "avg_temp_f": avg_temp_val,  # compatibility alias for current frontend
             "warning_count": warning_count,
             "critical_count": critical_count,
-            "max_temp_f": round(max_temp, 1) if max_temp is not None else 0,
+            "max_temp": max_temp_val,
+            "max_temp_f": max_temp_val,  # compatibility alias for current frontend
             "out_of_range_pct": out_of_range_pct
         })
 
@@ -122,6 +154,7 @@ def get_metrics():
         if conn:
             conn.close()
 
+
 @app.route("/api/chart-data")
 def chart_data():
     conn = None
@@ -131,7 +164,7 @@ def chart_data():
             cursor.execute("""
                 SELECT
                     DATE_FORMAT(timestamp_utc, '%H:%i:%s') AS label,
-                    temp_f AS temp
+                    temp_c AS temp
                 FROM messages
                 ORDER BY timestamp_utc DESC
                 LIMIT 20
@@ -152,6 +185,7 @@ def chart_data():
         if conn:
             conn.close()
 
+
 @app.route("/api/status")
 def get_status():
     conn = None
@@ -163,7 +197,7 @@ def get_status():
             cursor.execute("""
                 SELECT
                     device_id,
-                    temp_f,
+                    temp_c,
                     DATE_FORMAT(timestamp_utc, '%H:%i:%s') AS time
                 FROM messages
                 ORDER BY timestamp_utc DESC
@@ -176,36 +210,40 @@ def get_status():
                 "status": "NO DATA",
                 "color": "#9ca3af",
                 "message": "No telemetry received yet",
-                "latest_temp_f": None,
+                "latest_temp": None,
+                "latest_temp_f": None,  # compatibility alias for current frontend
                 "device_id": "--",
                 "time": "--"
             })
 
-        temp_f = float(latest["temp_f"])
+        temp_c = float(latest["temp_c"])
         alerts_enabled = settings["alert_enabled"]
 
         if not alerts_enabled:
             status = "MONITORING"
             color = "#60a5fa"
             message = "Alerts disabled. Monitoring only."
-        elif temp_f >= settings["critical_temp_f"]:
+        elif temp_c >= settings["critical_temp"]:
             status = "CRITICAL"
             color = "#ef4444"
-            message = f"Temperature exceeds critical threshold ({settings['critical_temp_f']} °F)"
-        elif temp_f >= settings["warning_temp_f"]:
+            message = f"Temperature exceeds critical threshold ({settings['critical_temp']} °C)"
+        elif temp_c >= settings["warning_temp"]:
             status = "WARNING"
             color = "#f59e0b"
-            message = f"Temperature exceeds warning threshold ({settings['warning_temp_f']} °F)"
+            message = f"Temperature exceeds warning threshold ({settings['warning_temp']} °C)"
         else:
             status = "NORMAL"
             color = "#22c55e"
             message = "Temperature within configured range"
 
+        latest_temp_val = round(temp_c, 1)
+
         return jsonify({
             "status": status,
             "color": color,
             "message": message,
-            "latest_temp_f": round(temp_f, 1),
+            "latest_temp": latest_temp_val,
+            "latest_temp_f": latest_temp_val,  # compatibility alias for current frontend
             "device_id": latest["device_id"],
             "time": latest["time"]
         })
@@ -216,6 +254,7 @@ def get_status():
     finally:
         if conn:
             conn.close()
+
 
 @app.route("/api/settings", methods=["GET"])
 def get_settings():
@@ -233,18 +272,27 @@ def get_settings():
         if conn:
             conn.close()
 
+
 @app.route("/api/settings", methods=["POST"])
 def save_settings():
     conn = None
     try:
         data = request.get_json(force=True)
 
-        warning_temp_f = float(data["warning_temp_f"])
-        critical_temp_f = float(data["critical_temp_f"])
+        # Accept either new Celsius names or current frontend compatibility names
+        warning_temp_c = data.get("warning_temp", data.get("warning_temp_f"))
+        critical_temp_c = data.get("critical_temp", data.get("critical_temp_f"))
         alert_enabled = bool(data["alert_enabled"])
 
-        if warning_temp_f >= critical_temp_f:
+        warning_temp_c = float(warning_temp_c)
+        critical_temp_c = float(critical_temp_c)
+
+        if warning_temp_c >= critical_temp_c:
             return jsonify({"error": "Warning threshold must be lower than critical threshold."}), 400
+
+        # Store in existing DB schema (Fahrenheit columns) for compatibility
+        warning_temp_f_db = c_to_f(warning_temp_c)
+        critical_temp_f_db = c_to_f(critical_temp_c)
 
         conn = get_db_connection()
         with conn.cursor() as cursor:
@@ -254,14 +302,16 @@ def save_settings():
                     critical_temp_f,
                     alert_enabled
                 ) VALUES (%s, %s, %s)
-            """, (warning_temp_f, critical_temp_f, alert_enabled))
+            """, (warning_temp_f_db, critical_temp_f_db, alert_enabled))
 
         conn.commit()
 
         return jsonify({
             "success": True,
-            "warning_temp_f": warning_temp_f,
-            "critical_temp_f": critical_temp_f,
+            "warning_temp": round(warning_temp_c, 1),
+            "critical_temp": round(critical_temp_c, 1),
+            "warning_temp_f": round(warning_temp_c, 1),   # compatibility alias for current frontend
+            "critical_temp_f": round(critical_temp_c, 1), # compatibility alias for current frontend
             "alert_enabled": alert_enabled
         })
 

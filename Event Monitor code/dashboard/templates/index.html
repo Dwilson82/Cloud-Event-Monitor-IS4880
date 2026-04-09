@@ -124,7 +124,7 @@
             box-shadow: 0 0 10px #f59e0b;
         }
 
-        select, input {
+        .selectish, select, input {
             margin-bottom: 10px;
             background: rgba(30,41,59,0.6);
             color: white;
@@ -344,6 +344,7 @@
     <script>
         let allEvents = [];
         let tempChart = null;
+        let alertsChart = null;
 
         function showSection(sectionId, btn) {
             document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
@@ -359,16 +360,17 @@
                 const data = await res.json();
                 if (data.error) return;
 
-                document.getElementById("total").innerText = data.total;
-                document.getElementById("dups").innerText = data.dups;
-                document.getElementById("avg").innerText = data.avg_temp_f + " °C";
+                document.getElementById("total").innerText = data.total ?? 0;
+                document.getElementById("dups").innerText = data.dups ?? 0;
+                document.getElementById("avg").innerText = (data.avg_temp ?? 0) + " °C";
 
                 const dupRate = data.total > 0 ? ((data.dups / data.total) * 100).toFixed(1) : 0;
                 document.getElementById("dupRate").innerText = dupRate + "%";
-                document.getElementById("warningCount").innerText = data.warning_count;
-                document.getElementById("criticalCount").innerText = data.critical_count;
-                document.getElementById("maxTemp").innerText = data.max_temp_f + " °C";
-                document.getElementById("outOfRangePct").innerText = data.out_of_range_pct + "%";
+                document.getElementById("warningCount").innerText = data.warning_count ?? 0;
+                document.getElementById("criticalCount").innerText = data.critical_count ?? 0;
+                document.getElementById("maxTemp").innerText = (data.max_temp ?? 0) + " °C";
+                document.getElementById("outOfRangePct").innerText = (data.out_of_range_pct ?? 0) + "%";
+
                 loadAlertsChart(data);
             } catch (err) {
                 console.error("loadMetrics failed:", err);
@@ -387,7 +389,7 @@
 
                 document.getElementById("statusMessage").innerText = data.message;
                 document.getElementById("latestReading").innerText =
-                    `${data.device_id} • ${data.latest_temp_f ?? '--'} °C @ ${data.time}`;
+                    `${data.device_id} • ${data.latest_temp ?? '--'} °C @ ${data.time}`;
             } catch (err) {
                 console.error("loadStatus failed:", err);
             }
@@ -399,12 +401,12 @@
                 const data = await res.json();
                 if (data.error) return;
 
-                document.getElementById("warningTemp").value = data.warning_temp_f;
-                document.getElementById("criticalTemp").value = data.critical_temp_f;
+                document.getElementById("warningTemp").value = data.warning_temp ?? "";
+                document.getElementById("criticalTemp").value = data.critical_temp ?? "";
                 document.getElementById("alertsEnabled").checked = !!data.alert_enabled;
 
                 document.getElementById("currentRules").innerText =
-                    `Warning: ${data.warning_temp_f} °C | Critical: ${data.critical_temp_f} °C | Alerts: ${data.alert_enabled ? 'On' : 'Off'}`;
+                    `Warning: ${data.warning_temp} °C | Critical: ${data.critical_temp} °C | Alerts: ${data.alert_enabled ? 'On' : 'Off'}`;
             } catch (err) {
                 console.error("loadSettings failed:", err);
             }
@@ -412,8 +414,8 @@
 
         async function saveSettings() {
             const payload = {
-                warning_temp_f: parseFloat(document.getElementById("warningTemp").value),
-                critical_temp_f: parseFloat(document.getElementById("criticalTemp").value),
+                warning_temp: parseFloat(document.getElementById("warningTemp").value),
+                critical_temp: parseFloat(document.getElementById("criticalTemp").value),
                 alert_enabled: document.getElementById("alertsEnabled").checked
             };
 
@@ -525,21 +527,21 @@
                     <td>${e.time}</td>
                     <td>
                         <span class="badge ${
-                            e.duplicate 
-                                ? 'dup' 
-                                : e.temp > 35 
-                                    ? 'dup' 
-                                    : e.temp > 32 
-                                        ? 'warn' 
+                            e.duplicate
+                                ? 'dup'
+                                : e.temp > 35
+                                    ? 'dup'
+                                    : e.temp > 32
+                                        ? 'warn'
                                         : 'ok'
                         }">
                             ${
-                                e.duplicate 
-                                    ? 'Duplicate' 
-                                    : e.temp > 35 
-                                        ? 'Critical' 
-                                        : e.temp > 32 
-                                            ? 'Warning' 
+                                e.duplicate
+                                    ? 'Duplicate'
+                                    : e.temp > 35
+                                        ? 'Critical'
+                                        : e.temp > 32
+                                            ? 'Warning'
                                             : 'OK'
                             }
                         </span>
@@ -555,7 +557,7 @@
 
             const latest = allEvents[0];
             document.getElementById("latestDevice").innerText = latest.device_id || "--";
-            document.getElementById("latestTemp").innerText = (latest.temp_f ?? '--') + " °C";
+            document.getElementById("latestTemp").innerText = (latest.temp ?? '--') + " °C";
             document.getElementById("lastTime").innerText = latest.time;
         }
 
@@ -569,6 +571,50 @@
             } else {
                 render(allEvents);
             }
+        }
+
+        function loadAlertsChart(data) {
+            const canvas = document.getElementById('alertsChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            if (alertsChart) alertsChart.destroy();
+
+            alertsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Normal', 'Warning', 'Critical'],
+                    datasets: [{
+                        label: 'Events',
+                        data: [
+                            Math.max((data.total ?? 0) - (data.warning_count ?? 0) - (data.critical_count ?? 0), 0),
+                            data.warning_count ?? 0,
+                            data.critical_count ?? 0
+                        ],
+                        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: 'white' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255,255,255,0.08)' }
+                        },
+                        y: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255,255,255,0.08)' }
+                        }
+                    }
+                }
+            });
         }
 
         async function refreshAll() {
@@ -588,34 +634,6 @@
                 await loadStatus();
             }, 4000);
         });
-
-        let alertsChart = null;
-
-        function loadAlertsChart(data) {
-            const canvas = document.getElementById('alertsChart');
-            if (!canvas) return;
-
-            const ctx = canvas.getContext('2d');
-
-            if (alertsChart) alertsChart.destroy();
-
-            alertsChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Normal', 'Warning', 'Critical'],
-                    datasets: [{
-                        label: 'Events',
-                        data: [
-                            data.total - data.warning_count - data.critical_count,
-                            data.warning_count,
-                            data.critical_count
-                        ],
-                        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444']
-                    }]
-                }
-            });
-        }
-
     </script>
 </body>
 </html>
