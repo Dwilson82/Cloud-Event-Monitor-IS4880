@@ -49,7 +49,7 @@ def get_events():
                     is_duplicate AS duplicate
                 FROM messages
                 ORDER BY timestamp_utc DESC
-                LIMIT 20
+               
             """)
             rows = cursor.fetchall()
 
