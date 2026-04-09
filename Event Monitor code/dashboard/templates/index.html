@@ -93,7 +93,7 @@
             text-align: left;
         }
 
-        tr:hover {
+        tr: hover {
             background: rgba(59,130,246,0.1);
         }
 
@@ -525,7 +525,14 @@
                     <td>${e.time}</td>
                     <td>
                         <span class="badge ${e.duplicate ? 'dup' : 'ok'}">
-                            ${e.duplicate ? 'Duplicate' : 'OK'}
+                            ${e.duplicate 
+                                ? 'Duplicate' 
+                                : e.temp > 35 
+                                    ? 'Critical' 
+                                    : e.temp > 32 
+                                        ? 'Warning' 
+                                        : 'OK'}${e.duplicate 
+                              
                         </span>
                     </td>
                 </tr>`;
