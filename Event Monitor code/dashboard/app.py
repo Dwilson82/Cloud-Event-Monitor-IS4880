@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 def get_db_connection():
     return pymysql.connect(
-        unix_socket="/cloudsql/project-e3a6924b-8583-4f8a-b9d:us-east1:cloudservereventmonitor",
+        unix_socket="/cloudsql/cloud-event-monitor-v2:us-east1:event-db",
         user=os.environ["DB_USER"],
         password=os.environ["DB_PASS"],
         database=os.environ["DB_NAME"],
