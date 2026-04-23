@@ -38,8 +38,8 @@ def get_current_settings(cursor):
         return {
             "warning_temp": round(warning_c, 1),
             "critical_temp": round(critical_c, 1),
-            "warning_temp_f": round(warning_c, 1),   # compatibility alias for current frontend
-            "critical_temp_f": round(critical_c, 1), # compatibility alias for current frontend
+            "warning_temp_f": round(warning_c, 1),
+            "critical_temp_f": round(critical_c, 1),
             "alert_enabled": True
         }
 
@@ -49,8 +49,8 @@ def get_current_settings(cursor):
     return {
         "warning_temp": round(warning_c, 1),
         "critical_temp": round(critical_c, 1),
-        "warning_temp_f": round(warning_c, 1),   # compatibility alias for current frontend
-        "critical_temp_f": round(critical_c, 1), # compatibility alias for current frontend
+        "warning_temp_f": round(warning_c, 1),
+        "critical_temp_f": round(critical_c, 1),
         "alert_enabled": bool(row["alert_enabled"])
     }
 
@@ -139,11 +139,11 @@ def get_metrics():
             "total": total,
             "dups": dups,
             "avg_temp": avg_temp_val,
-            "avg_temp_f": avg_temp_val,  # compatibility alias for current frontend
+            "avg_temp_f": avg_temp_val,
             "warning_count": warning_count,
             "critical_count": critical_count,
             "max_temp": max_temp_val,
-            "max_temp_f": max_temp_val,  # compatibility alias for current frontend
+            "max_temp_f": max_temp_val,
             "out_of_range_pct": out_of_range_pct
         })
 
@@ -171,11 +171,12 @@ def chart_data():
             """)
             rows = cursor.fetchall()
 
-        rows.reverse()
+        clean_rows = [r for r in rows if r["temp"] is not None]
+        clean_rows.reverse()
 
         return jsonify({
-            "labels": [r["label"] for r in rows],
-            "temps": [float(r["temp"]) for r in rows]
+            "labels": [r["label"] for r in clean_rows],
+            "temps": [float(r["temp"]) for r in clean_rows]
         })
 
     except Exception as e:
@@ -211,7 +212,7 @@ def get_status():
                 "color": "#9ca3af",
                 "message": "No telemetry received yet",
                 "latest_temp": None,
-                "latest_temp_f": None,  # compatibility alias for current frontend
+                "latest_temp_f": None,
                 "device_id": "--",
                 "time": "--"
             })
@@ -243,7 +244,7 @@ def get_status():
             "color": color,
             "message": message,
             "latest_temp": latest_temp_val,
-            "latest_temp_f": latest_temp_val,  # compatibility alias for current frontend
+            "latest_temp_f": latest_temp_val,
             "device_id": latest["device_id"],
             "time": latest["time"]
         })
@@ -279,7 +280,6 @@ def save_settings():
     try:
         data = request.get_json(force=True)
 
-        # Accept either new Celsius names or current frontend compatibility names
         warning_temp_c = data.get("warning_temp", data.get("warning_temp_f"))
         critical_temp_c = data.get("critical_temp", data.get("critical_temp_f"))
         alert_enabled = bool(data["alert_enabled"])
@@ -290,7 +290,6 @@ def save_settings():
         if warning_temp_c >= critical_temp_c:
             return jsonify({"error": "Warning threshold must be lower than critical threshold."}), 400
 
-        # Store in existing DB schema (Fahrenheit columns) for compatibility
         warning_temp_f_db = c_to_f(warning_temp_c)
         critical_temp_f_db = c_to_f(critical_temp_c)
 
@@ -310,8 +309,8 @@ def save_settings():
             "success": True,
             "warning_temp": round(warning_temp_c, 1),
             "critical_temp": round(critical_temp_c, 1),
-            "warning_temp_f": round(warning_temp_c, 1),   # compatibility alias for current frontend
-            "critical_temp_f": round(critical_temp_c, 1), # compatibility alias for current frontend
+            "warning_temp_f": round(warning_temp_c, 1),
+            "critical_temp_f": round(critical_temp_c, 1),
             "alert_enabled": alert_enabled
         })
 
