@@ -1,0 +1,34 @@
+2026-04-22 19:29:44,380 status=Publish enabled
+2026-04-22 19:29:45,458 Simulated mode active
+2026-04-22 19:29:45,458 sim temp_c=22.211 temp_f=71.980
+2026-04-22 19:29:45,607 status=Simulated mode active
+2026-04-22 19:29:47,848 Published pubsub_id=19374943226223871 message_id=sim-TEMP-AA01 sequence=1
+2026-04-22 19:29:47,868 status=Published event sim-TEMP-AA01
+2026-04-22 19:29:55,460 sim temp_c=22.542 temp_f=72.576
+2026-04-22 19:29:55,545 Published pubsub_id=19375124664195765 message_id=sim-TEMP-AA02 sequence=2
+2026-04-22 19:29:55,618 status=Published event sim-TEMP-AA02
+2026-04-22 19:30:05,463 sim temp_c=22.912 temp_f=73.241
+2026-04-22 19:30:05,556 Published pubsub_id=19375025965140904 message_id=sim-TEMP-AA03 sequence=3
+2026-04-22 19:30:05,621 status=Published event sim-TEMP-AA03
+2026-04-22 19:30:11,724 status=Publisher configuration updated
+2026-04-22 19:30:15,467 sim temp_c=22.457 temp_f=72.423
+2026-04-22 19:30:15,564 Published pubsub_id=19374896073664831 message_id=sim-TEMP-AA04 sequence=4
+2026-04-22 19:30:15,618 status=Published event sim-TEMP-AA04
+2026-04-22 19:30:20,470 sim temp_c=22.131 temp_f=71.836
+2026-04-22 19:30:20,527 Published pubsub_id=19374841558220881 message_id=sim-TEMP-AA05 sequence=5
+2026-04-22 19:30:20,708 status=Published event sim-TEMP-AA05
+2026-04-22 19:30:25,471 sim temp_c=21.809 temp_f=71.256
+2026-04-22 19:30:25,540 Published pubsub_id=19375137346914536 message_id=sim-TEMP-AA06 sequence=6
+2026-04-22 19:30:25,579 status=Queued duplicate event sim-TEMP-AA06
+2026-04-22 19:30:25,581 status=Published event sim-TEMP-AA06
+2026-04-22 19:30:25,609 Published pubsub_id=19375081238657725 message_id=sim-TEMP-AA06 sequence=6
+2026-04-22 19:30:25,784 status=Published duplicate event sim-TEMP-AA06
+2026-04-22 19:30:51,057 status=Publisher configuration updated
+2026-04-22 19:30:59,756 Simulated mode active
+2026-04-22 19:30:59,756 sim temp_c=22.399 temp_f=72.318
+2026-04-22 19:30:59,808 status=Simulated mode active
+2026-04-22 19:30:59,827 Published pubsub_id=19375124737989218 message_id=sim-TEMP-AA07 sequence=1
+2026-04-22 19:31:00,013 status=Published event sim-TEMP-AA07
+2026-04-22 19:31:04,757 sim temp_c=22.811 temp_f=73.060
+2026-04-22 19:31:04,832 Published pubsub_id=19375034293829812 message_id=sim-TEMP-AA08 sequence=2
+2026-04-22 19:31:04,894 status=Published event sim-TEMP-AA08

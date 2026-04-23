@@ -1,4 +1,4 @@
-# This script is hardware dependant and requires the raspberry pi and the DS18B20 to produce output
+# The live mode of this script is hardware dependant and requires the raspberry pi and the DS18B20 to produce output
 
 import glob
 import json

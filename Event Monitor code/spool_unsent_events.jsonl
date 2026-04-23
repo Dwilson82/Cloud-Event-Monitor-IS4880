@@ -1,0 +1,4 @@
+{"message_id": "sim-TEMP-AA01", "device_id": "rpi-sim", "mode": "sim", "temp_c": 22.426565058514054, "temp_f": 72.3678171053253, "timestamp_utc": "2026-04-20T23:35:34.163071Z", "sequence": 1, "event_type": "TEMP_READING"}
+{"message_id": "sim-TEMP-AA02", "device_id": "rpi-sim", "mode": "sim", "temp_c": 22.398295983348635, "temp_f": 72.31693277002753, "timestamp_utc": "2026-04-20T23:36:58.041322Z", "sequence": 1, "event_type": "TEMP_READING"}
+{"message_id": "sim-TEMP-AA03", "device_id": "rpi-sim", "mode": "sim", "temp_c": 22.802173166625206, "temp_f": 73.04391169992537, "timestamp_utc": "2026-04-20T23:37:08.043029Z", "sequence": 2, "event_type": "TEMP_READING"}
+{"message_id": "sim-TEMP-AA04", "device_id": "rpi-sim", "mode": "sim", "temp_c": 22.52138890576505, "temp_f": 72.5385000303771, "timestamp_utc": "2026-04-20T23:39:47.281538Z", "sequence": 1, "event_type": "TEMP_READING"}

@@ -1,0 +1,27 @@
+2026-04-20 19:35:31,734 status=Publish enabled
+2026-04-20 19:35:34,160 Simulated mode active
+2026-04-20 19:35:34,160 sim temp_c=22.427 temp_f=72.368
+2026-04-20 19:35:34,164 status=Simulated mode active
+2026-04-20 19:35:34,165 status=Pub/Sub unavailable: spooling enabled
+2026-04-20 19:36:57,011 status=Publish enabled
+2026-04-20 19:36:58,039 Simulated mode active
+2026-04-20 19:36:58,039 sim temp_c=22.398 temp_f=72.317
+2026-04-20 19:36:58,229 status=Simulated mode active
+2026-04-20 19:36:58,230 status=Pub/Sub unavailable: spooling enabled
+2026-04-20 19:37:08,042 sim temp_c=22.802 temp_f=73.044
+2026-04-20 19:39:46,057 status=Publish enabled
+2026-04-20 19:39:47,279 Simulated mode active
+2026-04-20 19:39:47,279 sim temp_c=22.521 temp_f=72.539
+2026-04-20 19:39:47,282 status=Simulated mode active
+2026-04-20 19:39:47,283 status=Pub/Sub unavailable: spooling enabled
+2026-04-22 19:21:13,421 status=Live mode is not supported on Windows; staying in Simulated
+2026-04-22 19:21:13,422 status=Simulated mode selected
+2026-04-22 19:21:17,080 status=Publish enabled
+2026-04-22 19:21:18,637 Simulated mode active
+2026-04-22 19:21:18,637 sim temp_c=21.421 temp_f=70.558
+2026-04-22 19:21:18,712 status=Simulated mode active
+2026-04-22 19:21:20,573 Published pubsub_id=19375059545904849 message_id=sim-TEMP-AA05 sequence=1
+2026-04-22 19:21:20,768 status=Published event sim-TEMP-AA05
+2026-04-22 19:21:28,640 sim temp_c=19.905 temp_f=67.828
+2026-04-22 19:21:28,715 Published pubsub_id=18771579950074567 message_id=sim-TEMP-AA06 sequence=2
+2026-04-22 19:21:28,718 status=Published event sim-TEMP-AA06
