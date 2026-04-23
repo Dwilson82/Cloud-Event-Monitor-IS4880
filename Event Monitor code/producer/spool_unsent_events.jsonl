@@ -1,0 +1,1 @@
+{"message_id": "sim-TEMP-AA01", "device_id": "rpi-sim", "mode": "sim", "temp_c": 22.343460481858727, "temp_f": 72.21822886734572, "timestamp_utc": "2026-04-17T21:18:30.331723Z", "sequence": 1, "event_type": "TEMP_READING"}

@@ -1,0 +1,15 @@
+{
+  "device_id_live": "rpi-1",
+  "device_id_sim": "windows",
+  "publish_interval": 10.0,
+  "temp_high_threshold": 30.0,
+  "temp_low_threshold": -10.0,
+  "sim_min_temp": -20.0,
+  "sim_max_temp": 35.0,
+  "alerts_enabled": true,
+  "duplicate_sim_enabled": false,
+  "duplicate_rate_percent": 5.0,
+  "id_counters": {
+    "sim-TEMP": "AA08"
+  }
+}

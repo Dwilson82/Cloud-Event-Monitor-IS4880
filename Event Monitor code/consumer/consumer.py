@@ -4,7 +4,7 @@ import os
 import pymysql
 
 
-def processCloudEvent(cloud_event):
+def process_cloud_event(cloud_event):
     connection = None
 
     try:
@@ -17,6 +17,10 @@ def processCloudEvent(cloud_event):
 
         if isinstance(envelope, str):
             envelope = json.loads(envelope)
+
+        if not isinstance(envelope, dict):
+            print("Unexpected event format:", envelope)
+            return
 
         print("PARSED EVENT:", envelope)
 
@@ -50,11 +54,12 @@ def processCloudEvent(cloud_event):
         print("Connecting to database...")
 
         connection = pymysql.connect(
-            unix_socket="/cloudsql/cloud-event-monitor-v2:us-central1:event-db",
+            unix_socket=f"/cloudsql/{os.environ['INSTANCE_CONNECTION_NAME']}",
             user=os.environ["DB_USER"],
             password=os.environ["DB_PASS"],
             database=os.environ["DB_NAME"],
-            cursorclass=pymysql.cursors.DictCursor
+            cursorclass=pymysql.cursors.DictCursor,
+            autocommit=False
         )
 
         with connection.cursor() as cursor:
@@ -65,20 +70,20 @@ def processCloudEvent(cloud_event):
             result = cursor.fetchone()
             is_duplicate = 1 if result["cnt"] > 0 else 0
 
-            sql = """
-            INSERT INTO messages (
-                message_id,
-                device_id,
-                temp_c,
-                temp_f,
-                timestamp_utc,
-                is_duplicate
-            )
-            VALUES (%s, %s, %s, %s, %s, %s)
+            insert_sql = """
+                INSERT INTO messages (
+                    message_id,
+                    device_id,
+                    temp_c,
+                    temp_f,
+                    timestamp_utc,
+                    is_duplicate
+                )
+                VALUES (%s, %s, %s, %s, %s, %s)
             """
 
             cursor.execute(
-                sql,
+                insert_sql,
                 (
                     message_id,
                     device_id,
@@ -90,7 +95,7 @@ def processCloudEvent(cloud_event):
             )
 
         connection.commit()
-        print(f"Insert successful, duplicate={is_duplicate}")
+        print(f"Insert successful: message_id={message_id}, duplicate={is_duplicate}")
 
     except Exception as e:
         print("DATABASE ERROR:", str(e))

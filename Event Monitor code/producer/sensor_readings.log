@@ -1,0 +1,41 @@
+2026-04-17 17:18:29,077 status=Publish enabled
+2026-04-17 17:18:30,330 Simulated mode active
+2026-04-17 17:18:30,330 sim temp_c=22.343 temp_f=72.218
+2026-04-17 17:18:30,517 status=Simulated mode active
+2026-04-17 17:18:30,518 status=Pub/Sub unavailable: spooling enabled
+2026-04-17 17:28:48,738 status=Publish enabled
+2026-04-17 17:28:50,818 Simulated mode active
+2026-04-17 17:28:50,818 sim temp_c=21.644 temp_f=70.959
+2026-04-17 17:28:50,992 status=Simulated mode active
+2026-04-17 17:28:52,606 Published pubsub_id=18760907621484815 message_id=sim-TEMP-AA02 sequence=1
+2026-04-17 17:28:52,628 status=Published event sim-TEMP-AA02
+2026-04-17 17:29:00,820 sim temp_c=21.447 temp_f=70.605
+2026-04-17 17:29:00,879 Published pubsub_id=19346928527344107 message_id=sim-TEMP-AA03 sequence=2
+2026-04-17 17:29:01,039 status=Published event sim-TEMP-AA03
+2026-04-17 17:29:31,467 status=Publisher configuration updated
+2026-04-17 17:29:33,020 Simulated mode active
+2026-04-17 17:29:33,020 sim temp_c=22.126 temp_f=71.826
+2026-04-17 17:29:33,088 Published pubsub_id=19346993916939492 message_id=sim-TEMP-AA04 sequence=1
+2026-04-17 17:29:33,095 status=Simulated mode active
+2026-04-17 17:29:33,095 status=Published event sim-TEMP-AA04
+2026-04-17 17:29:43,021 sim temp_c=22.496 temp_f=72.492
+2026-04-17 17:29:43,073 Published pubsub_id=19346827708051261 message_id=sim-TEMP-AA05 sequence=2
+2026-04-17 17:29:43,077 status=Published event sim-TEMP-AA05
+2026-04-17 17:29:51,034 status=Live mode is not supported on Windows; staying in Simulated
+2026-04-17 17:29:51,034 status=Simulated mode selected
+2026-04-17 17:29:53,022 sim temp_c=22.879 temp_f=73.182
+2026-04-17 17:29:53,075 Published pubsub_id=19346372611633329 message_id=sim-TEMP-AA06 sequence=3
+2026-04-17 17:29:53,269 status=Published event sim-TEMP-AA06
+2026-04-17 17:29:55,503 status=Simulated mode selected
+2026-04-17 17:30:08,988 status=Publisher configuration updated
+2026-04-17 17:30:10,677 Simulated mode active
+2026-04-17 17:30:10,677 sim temp_c=22.191 temp_f=71.944
+2026-04-17 17:30:10,724 Published pubsub_id=19347050186676410 message_id=sim-TEMP-AA07 sequence=1
+2026-04-17 17:30:10,818 status=Simulated mode active
+2026-04-17 17:30:10,820 status=Published event sim-TEMP-AA07
+2026-04-17 17:30:24,360 status=Publisher configuration updated
+2026-04-17 17:30:26,105 Simulated mode active
+2026-04-17 17:30:26,105 sim temp_c=22.271 temp_f=72.088
+2026-04-17 17:30:26,193 status=Simulated mode active
+2026-04-17 17:30:26,218 Published pubsub_id=19346624200479000 message_id=sim-TEMP-AA08 sequence=1
+2026-04-17 17:30:26,395 status=Published event sim-TEMP-AA08
