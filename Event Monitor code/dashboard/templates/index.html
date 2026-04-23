@@ -180,6 +180,7 @@
         .status-text {
             font-size: 28px;
             font-weight: bold;
+            text-shadow: 0 0 12px currentColor
         }
 
         .settings-actions {
@@ -204,6 +205,17 @@
             align-items: center;
             gap: 10px;
             margin-top: 10px;
+        }
+        .dup {
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px #ef4444; }
+            50% { box-shadow: 0 0 25px #ef4444; }
+            100% { box-shadow: 0 0 10px #ef4444; }
         }
     </style>
 </head>
@@ -232,7 +244,7 @@
     </div>
 
     <div class="main">
-        <h1>🖥 Data Center Dashboard</h1>
+        <h1> Data Center Dashboard</h1>
         <p class="muted">Real-Time Pub/Sub Monitoring</p>
 
         <div id="dashboard" class="section active">
@@ -334,7 +346,8 @@
                 </div>
 
                 <div class="card full">
-                    <h3>Alerts Overview</h3>
+                    <h3>System Health Overview</h3>
+                    <p class="muted">Normal vs Warning vs Critical events</p>
                     <canvas id="alertsChart"></canvas>
                 </div>
             </div>
