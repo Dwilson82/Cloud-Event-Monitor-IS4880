@@ -64,7 +64,9 @@
 
         .main {
             flex: 1;
-            padding: 30px;
+            padding: 30px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .grid {
@@ -72,35 +74,38 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
         }
+        #analytics .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
 
         .card {
             background: linear-gradient(
-                145deg,
-                rgba(30,41,59,0.8),
+                160deg,
+                rgba(30,41,59,0.9),
                 rgba(15,23,42,0.95)
             );
         
-            border-radius: 20px;
-            padding: 20px;
+            border-radius: 18px;
+            padding: 22px;
         
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.04);
         
-            box-shadow: 0 8px 25px rgba(0,0,0,0.5);;
+            box-shadow: 
+                0 8px 25px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.4);
         
-            backdrop-filter: blur(20px);
-        
-            transition: all 0.25s ease;
+            backdrop-filter: blur(18px);
+
+            transition: 0.2s ease;
         }
+
+           
 
         .large { grid-column: span 2; }
         .full { grid-column: span 3; }
 
-        .big {
-            font-size: 36px;
-            font-weight: 700;
-            margin-top: 10px;
-             letter-spacing: -1px;
-        }
         .card h3 {
             font-size: 14px;
             color: #94a3b8;
@@ -177,7 +182,7 @@
 
         .analytics-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 24px;
         }
 
@@ -226,17 +231,11 @@
             gap: 10px;
             margin-top: 10px;
         }
-        .dup {
-            background: #ef4444;
-            box-shadow: 0 0 10px #ef4444;
-            animation: pulse 1.5s infinite;
-        }
 
         .card:hover {
-            transform: translateY(-6px);
+            transform: translateY(-4px);
             box-shadow:
-                0 20px 40px rgba(0,0,0,0.7),
-                0 0 20px rgba(59,130,246,0.15);
+                0 12px 30px rgba(0,0,0,0.6);     
         }
 
         .large-chart canvas {
@@ -262,7 +261,7 @@
         }
         .charts-row {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 2.2fr 1fr;
             gap: 30px;
             margin-top: 30px;
         }
@@ -273,6 +272,9 @@
         
         .small-chart {
             padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .card h3 {
@@ -548,12 +550,11 @@
                 document.getElementById("avg").innerText = (data.avg_temp ?? 0) + " °C";
 
                 const dupRate = data.total > 0 ? ((data.dups / data.total) * 100).toFixed(1) : 0;
-                let label = "Healthy";
+                
 
                 if (dupRate > 20) label = "Unstable";
                 else if (dupRate > 10) label = "Moderate";
-                
-                document.getElementById("dupLabel").innerText = label;
+            
                 document.getElementById("dupRate").innerText = dupRate + "%";
                 document.getElementById("warningCount").innerText = data.warning_count ?? 0;
                 document.getElementById("criticalCount").innerText = data.critical_count ?? 0;
@@ -782,10 +783,6 @@
         
             document.getElementById("dupRate").innerText = dupRate + "%";
         
-            document.getElementById("uniquePct").innerText = (100 - dupRate) + "% Unique";
-            document.getElementById("dupPct").innerText = dupRate + "% Duplicate";
-        
-            document.getElementById("dupBar").style.width = (100 - dupRate) + "%";
         
             let status = "Healthy";
             if (latest > 35) status = "Critical";
@@ -825,13 +822,13 @@
         
             if (alertsChart) alertsChart.destroy();
         
-           
             const temps = allEvents
                 .map(e => Number(e.temp))
                 .filter(t => !isNaN(t));
         
-            const normal = temps.filter(t => t < 27).length;
-            const warning = temps.filter(t => t >= 32 && t < 35).length;;
+            // ✅ MATCH YOUR ACTUAL SYSTEM (IMPORTANT)
+            const normal = temps.filter(t => t < 32).length;
+            const warning = temps.filter(t => t >= 32 && t < 35).length;
             const critical = temps.filter(t => t >= 35).length;
         
             const values = [normal, warning, critical];
@@ -853,19 +850,8 @@
                         legend: {
                             position: 'right',
                             labels: {
-                                fontColor: 'white',
-                                generateLabels(chart) {
-                                    return chart.data.labels.map((label, i) => {
-                                        const percent = total ? ((values[i] / total) * 100).toFixed(1) : 0;
-        
-                                        return {
-                                            text: `${label} (${percent}%)`,
-                                            fillStyle: chart.data.datasets[0].backgroundColor[i],
-                                            strokeStyle: chart.data.datasets[0].backgroundColor[i],
-                                            index: i
-                                        };
-                                    });
-                                }
+                                color: 'white',
+                                padding: 12
                             }
                         }
                     }
@@ -876,8 +862,8 @@
                         const { ctx, chartArea } = chart;
                         if (!chartArea) return;
         
-                        const centerX = (chartArea.left + chartArea.right) / 2;
-                        const centerY = (chartArea.top + chartArea.bottom) / 2;
+                        const x = (chartArea.left + chartArea.right) / 2;
+                        const y = (chartArea.top + chartArea.bottom) / 2;
         
                         ctx.save();
                         ctx.textAlign = "center";
@@ -885,11 +871,11 @@
         
                         ctx.font = "14px Arial";
                         ctx.fillStyle = "#94a3b8";
-                        ctx.fillText("Events", centerX, centerY - 8);
-
-                        ctx.font = "bold 24px Arial";
+                        ctx.fillText("Events", x, y - 10);
+        
+                        ctx.font = "bold 26px Arial";
                         ctx.fillStyle = "white";
-                        ctx.fillText(total, centerX, centerY + 10);
+                        ctx.fillText(total, x, y + 10);
         
                         ctx.restore();
                     }
