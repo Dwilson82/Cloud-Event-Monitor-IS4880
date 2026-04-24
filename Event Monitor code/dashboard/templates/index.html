@@ -433,10 +433,10 @@
                             <p class="muted">Live temperature over time</p>
                         </div>
 
-                        <select>
-                            <option>Last 30 Minutes</option>
-                            <option>Last 1 Hour</option
-                        </select>
+                        <select id="timeRange" onchange="loadChart()">
+                        <option value="30">Last 30 Minutes</option>
+                        <option value="60">Last 1 Hour</option>
+                    </select>
                     </div>
                     <canvas id="analyticsTempChart"></canvas>
     
@@ -745,7 +745,12 @@
             if (!canvas) return;
         
             const ctx = canvas.getContext('2d');
-            if (alertsChart) alertsChart.destroy();
+            if (analyticsChart) {
+            analyticsChart.data.labels = labels;
+            analyticsChart.data.datasets[0].data = temps;
+            analyticsChart.update();
+            return;
+        }
         
             const values = [
                 Math.max(data.total - data.warning_count - data.critical_count, 0),
@@ -782,7 +787,7 @@
                                             text: `${label} (${percent}%)`,
                                             fillStyle: chart.data.datasets[0].backgroundColor[i],
                                             strokeStyle: chart.data.datasets[0].backgroundColor[i],
-                                            fontColor: 'white',
+                                            Color: 'white',
                                             index: i
                                         };
                                     });
