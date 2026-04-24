@@ -434,7 +434,8 @@
                         </div>
 
                         <select>
-                            <option>Last 30 minutes</option>
+                            <option>Last 30 Minutes</option>
+                            <option>Last 1 Hour</option
                         </select>
                     </div>
                     <canvas id="analyticsTempChart"></canvas>
@@ -608,7 +609,7 @@
                 const data = await res.json();
                 if (data.error) return;
         
-                // DASHBOARD
+            
                 const dash = document.getElementById('tempChart');
                 if (dash) {
                     const ctx = dash.getContext('2d');
@@ -630,18 +631,22 @@
                     });
                 }
         
-                // ANALYTICS
                 const analytics = document.getElementById('analyticsTempChart');
                 if (analytics) {
+                    const range = document.getElementById('timeRange')?.value || "30";
+                    const limit = parseInt(range);
+                    
+                    const labels = data.labels.slice(-limit);
+                    const temps = data.temps.slice(-limit);
                     const ctx = analytics.getContext('2d');
                     if (analyticsChart) analyticsChart.destroy();
         
                     analyticsChart = new Chart(ctx, {
                         type: 'line',
                         data: {
-                            labels: data.labels,
+                            labels: labels,
                             datasets: [{
-                                data: data.temps,
+                                data: temps,
                                 borderColor: '#a855f7',
                                 backgroundColor: 'rgba(168,85,247,0.15)',
                                 pointRadius: 4,
