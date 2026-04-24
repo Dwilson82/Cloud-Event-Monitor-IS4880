@@ -742,16 +742,20 @@
             const ctx = canvas.getContext('2d');
             if (alertsChart) alertsChart.destroy();
         
+            const values = [
+                Math.max(data.total - data.warning_count - data.critical_count, 0),
+                data.warning_count,
+                data.critical_count
+            ];
+        
+            const total = values.reduce((a, b) => a + b, 0);
+        
             alertsChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Normal', 'Warning', 'Critical'],
                     datasets: [{
-                        data: [
-                            Math.max(data.total - data.warning_count - data.critical_count, 0),
-                            data.warning_count,
-                            data.critical_count
-                        ],
+                        data: values,
                         backgroundColor: ['#22c55e','#f59e0b','#ef4444'],
                         spacing: 6,
                         borderWidth: 0
@@ -762,10 +766,49 @@
                     plugins: {
                         legend: {
                             position: 'right',
-                            labels: { color: 'white' }
+                            labels: {
+                                color: 'white',
+                                generateLabels(chart) {
+                                    return chart.data.labels.map((label, i) => {
+                                        const value = values[i];
+                                        const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+        
+                                        return {
+                                            text: `${label} (${percent}%)`,
+                                            fillStyle: chart.data.datasets[0].backgroundColor[i],
+                                            strokeStyle: chart.data.datasets[0].backgroundColor[i],
+                                            index: i
+                                        };
+                                    });
+                                }
+                            }
                         }
                     }
-                }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    beforeDraw(chart) {
+                        const { ctx, chartArea } = chart;
+                        if (!chartArea) return;
+        
+                        const centerX = (chartArea.left + chartArea.right) / 2;
+                        const centerY = (chartArea.top + chartArea.bottom) / 2;
+        
+                        ctx.save();
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+        
+                        ctx.font = "14px Arial";
+                        ctx.fillStyle = "#94a3b8";
+                        ctx.fillText("Total", centerX, centerY - 10);
+        
+                        ctx.font = "bold 22px Arial";
+                        ctx.fillStyle = "white";
+                        ctx.fillText(total, centerX, centerY + 12);
+        
+                        ctx.restore();
+                    }
+                }]
             });
         }
         
