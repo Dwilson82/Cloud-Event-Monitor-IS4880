@@ -386,7 +386,7 @@
             <div class="charts-row">
                 <div class="card large-chart">
                     <h3>Temperature Trend</h3>
-                    <canvas id="tempChart"></canvas>
+                    <canvas id="analyticsTempChart"></canvas>
                 </div>
 
                 <div class="card small-chart">
@@ -546,7 +546,7 @@
                 const data = await res.json();
                 if (data.error) return;
 
-                const canvas = document.getElementById('tempChart');
+                const canvas = document.getElementById('tempChart') || document.getElementById('analyticsTempChart');
                 if (!canvas) return;
 
                 const ctx = canvas.getContext('2d');
@@ -674,35 +674,32 @@
             if (alertsChart) alertsChart.destroy();
 
             alertsChart = new Chart(ctx, {
-                type: 'bar',
+                type: 'doughnut', // 🔥 
                 data: {
                     labels: ['Normal', 'Warning', 'Critical'],
                     datasets: [{
-                        label: 'Events',
                         data: [
                             Math.max((data.total ?? 0) - (data.warning_count ?? 0) - (data.critical_count ?? 0), 0),
                             data.warning_count ?? 0,
                             data.critical_count ?? 0
                         ],
-                        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444']
+                        backgroundColor: [
+                            '#22c55e',
+                            '#f59e0b',
+                            '#ef4444'
+                        ],
+                        borderWidth: 0
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    cutout: '65%', 
                     plugins: {
                         legend: {
-                            labels: { color: 'white' }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: { color: 'white' },
-                            grid: { color: 'rgba(255,255,255,0.08)' }
-                        },
-                        y: {
-                            ticks: { color: 'white' },
-                            grid: { color: 'rgba(255,255,255,0.08)' }
+                            labels: {
+                                color: 'white',
+                                padding: 15
+                            }
                         }
                     }
                 }
