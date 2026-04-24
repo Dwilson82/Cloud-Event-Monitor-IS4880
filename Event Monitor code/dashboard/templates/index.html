@@ -74,15 +74,15 @@
         }
 
         .card {
-            background: rgba(30,41,59,0.4);
-            backdrop-filter: blur(20px);
-            border-radius: 15px;
+            background: rgba(30,41,59,0.6);
+            backdrop-filter: blur(18px);
+            border-radius: 20px;
             padding: 20px;
             border: 1px solid rgba(255,255,255,0.05);
-            box-shadow:
-                0 0 10px rgba(59,130,246,0.3),
-                0 0 30px rgba(168,85,247,0.2);
-        }
+
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            transition: all 0.25s ease
+                }
 
         .large { grid-column: span 2; }
         .full { grid-column: span 3; }
@@ -90,6 +90,7 @@
         .big {
             font-size: 26px;
             font-weight: bold;
+            margin-top: 10px;
         }
 
         h1 {
@@ -160,7 +161,12 @@
             opacity: 0.75;
         }
 
-        .analytics-grid,
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
         .settings-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -210,6 +216,24 @@
             background: #ef4444;
             box-shadow: 0 0 10px #ef4444;
             animation: pulse 1.5s infinite;
+        }
+        .charts-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-top: 25px;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+        }
+
+        .large-chart canvas {
+            height: 300px !important;
+        }
+
+        .small-chart canvas {
+            height: 300px !important;
         }
 
         @keyframes pulse {
@@ -304,37 +328,39 @@
         </div>
 
         <div id="analytics" class="section">
+
+            <h2>Analytics Overview</h2>
+            <p class="muted">Real-time insights from your system</p>
+
+    
             <div class="analytics-grid">
                 <div class="card">
                     <h3>Duplicate Rate</h3>
+                    <p class="muted">System retry behavior</p>
                     <div class="big" id="dupRate">0%</div>
-                </div>
-
-                <div class="card" onclick="goToLogs()">
-                    <h3>Latest Device</h3>
-                    <div class="big" id="latestDevice">--</div>
                 </div>
 
                 <div class="card">
                     <h3>Latest Temperature</h3>
+                    <p class="muted">Most recent reading</p>
                     <div class="big" id="latestTemp">--</div>
                 </div>
 
                 <div class="card">
-                    <h3>Last Update Time</h3>
-                    <div class="big" id="lastTime">--</div>
-                </div>
-
-                <div class="card">
                     <h3>Warning Events</h3>
+                    <p class="muted">Above threshold</p>
                     <div class="big" id="warningCount">0</div>
                 </div>
 
                 <div class="card">
                     <h3>Critical Events</h3>
+                    <p class="muted">High temperature alerts</p>
                     <div class="big" id="criticalCount">0</div>
                 </div>
+            </div>
 
+
+            <div class="analytics-grid" style="margin-top:20px;">
                 <div class="card">
                     <h3>Max Temperature</h3>
                     <div class="big" id="maxTemp">--</div>
@@ -345,13 +371,32 @@
                     <div class="big" id="outOfRangePct">0%</div>
                 </div>
 
-                <div class="card full">
-                    <h3>System Health Overview</h3>
-                    <p class="muted">Normal vs Warning vs Critical events</p>
+                <div class="card">
+                    <h3>Latest Device</h3>
+                    <div class="big" id="latestDevice">--</div>
+                </div>
+
+                <div class="card">
+                    <h3>Last Update Time</h3>
+                    <div class="big" id="lastTime">--</div>
+                </div>
+            </div>
+
+    
+            <div class="charts-row">
+                <div class="card large-chart">
+                    <h3>Temperature Trend</h3>
+                    <canvas id="tempChart"></canvas>
+                </div>
+
+                <div class="card small-chart">
+                    <h3>Event Distribution</h3>
                     <canvas id="alertsChart"></canvas>
                 </div>
             </div>
+
         </div>
+
 
         <div id="settings" class="section">
             <div class="settings-grid">
