@@ -368,90 +368,88 @@
 
         <div id="analytics" class="section">
 
-            <h2>Analytics Overview</h2>
-            <p class="muted">Real-time insights from your system</p>
-
+        <h1>Analytics</h1>
+        <div class="grid">
     
-            <div class="analytics-grid">
-                <div class="card">
-                    <h3>Duplicate Rate</h3>
-                    <p class="muted">System retry behavior</p>
-                    <div class="big" id="dupRate">0%</div>
-                </div>
-
-                <div class="card">
-                    <h3>Latest Temperature</h3>
-                    <p class="muted">Most recent reading</p>
-                    <div class="big" id="latestTemp">--</div>
-                </div>
-
-                <div class="card">
-                    <h3>Warning Events</h3>
-                    <p class="muted">Above threshold</p>
-                    <div class="big" id="warningCount">0</div>
-                </div>
-
-                <div class="card">
-                    <h3>Critical Events</h3>
-                    <p class="muted">High temperature alerts</p>
-                    <div class="big" id="criticalCount">0</div>
-                </div>
-            </div>
-
-
-            <div class="analytics-grid" style="margin-top:20px;">
-                <div class="card">
-                    <h3>Max Temperature</h3>
-                    <div class="big" id="maxTemp">--</div>
-                </div>
-
-                <div class="card">
-                    <h3>Out-of-Range %</h3>
-                    <div class="big" id="outOfRangePct">0%</div>
-                </div>
-
-                <div class="card">
-                    <h3>Latest Device</h3>
-                    <div class="big" id="latestDevice">--</div>
-                </div>
-
-                <div class="card">
-                    <h3>Last Update Time</h3>
-                    <div class="big" id="lastTime">--</div>
-                </div>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:30px;">
-                <h3 style="margin:0;">System Trends</h3>
-                <span class="muted">Live data</span>
+            <div class="card">
+                <h3>Latest Temperature</h3>
+                <div class="big" id="latestTemp">--</div>
+                <div class="muted" id="tempChange">--</div>
             </div>
     
-            <div class="charts-row">
-                <div class="card large-chart">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <h3 style="margin:0;">Temperature Trend</h3>
-                            <p class="muted">Live temperature over time</p>
-                        </div>
-
-                        <select id="timeRange" onchange="loadChart()">
-                        <option value="30">Last 30 Minutes</option>
-                        <option value="60">Last 1 Hour</option>
-                    </select>
-                    </div>
-                    <canvas id="analyticsTempChart"></canvas>
+            <div class="card">
+                <h3>Temperature Change (5 min)</h3>
+                <div class="big" id="tempDelta">--</div>
+                <div class="muted" id="tempTrend">--</div>
+            </div>
     
-                </div>
-
-                <div class="card small-chart">
-                    <h3>Event Distribution</h3>
-                    <p class="muted">Breakdown of events by severity</p>
-
-                    <canvas id="alertsChart"></canvas>
-                </div>
-
+            <div class="card">
+                <h3>Duplicate Rate</h3>
+                <div class="big" id="dupRate">--</div>
+            </div>
+    
+            <div class="card">
+                <h3>System Status</h3>
+                <div class="big" id="systemStatus">--</div>
+            </div>
+    
+        </div>
+    
+        <div class="charts-row">
+    
+            <div class="card large-chart">
+                <h3>Temperature Over Time</h3>
+    
+                <select id="timeRange" onchange="loadChart()">
+                    <option value="30">Last 30 Minutes</option>
+                    <option value="60">Last 1 Hour</option>
+                </select>
+    
+                <canvas id="analyticsTempChart"></canvas>
+            </div>
+    
+            <div class="card small-chart">
+                <h3>Temperature Distribution</h3>
+                <canvas id="alertsChart"></canvas>
+            </div>
+    
+        </div>
+    
+        <div class="card">
+            <h3>Duplication Overview</h3>
+    
+            <div style="display:flex; justify-content:space-between;">
+                <div id="uniquePct" style="color:#22c55e;">--</div>
+                <div id="dupPct" style="color:#ef4444;">--</div>
+            </div>
+    
+            <div style="height:8px; background:#111; border-radius:5px; margin-top:10px;">
+                <div id="dupBar" style="height:100%; background:#22c55e; width:50%; border-radius:5px;"></div>
             </div>
         </div>
-
+    
+        <div class="analytics-grid">
+    
+            <div class="card">
+                <h3>Recent Activity</h3>
+                <div id="recentActivity">--</div>
+            </div>
+    
+            <div class="card">
+                <h3>Temperature Summary</h3>
+                <div id="summary">--</div>
+            </div>
+    
+            <div class="card">
+                <h3>Thresholds</h3>
+                <div>🟢 Normal: 18–27°C</div>
+                <div>🟡 Warning: 27–35°C</div>
+                <div>🔴 Critical: >35°C</div>
+            </div>
+    
+        </div>
+    
+    </div>
 
         <div id="settings" class="section">
             <div class="settings-grid">
@@ -719,13 +717,53 @@
             document.getElementById("tableBody").innerHTML = html;
         }
 
-        function updateAnalytics() {
-            if (!allEvents.length) return;
+        function updateAnalytics(data) {
 
-            const latest = allEvents[0];
-            document.getElementById("latestDevice").innerText = latest.device_id || "--";
-            document.getElementById("latestTemp").innerText = (latest.temp ?? '--') + " °C";
-            document.getElementById("lastTime").innerText = latest.time;
+            const temps = data.map(d => d.temp_c).filter(Boolean);
+        
+            const latest = temps[temps.length - 1] || 0;
+            const prev = temps[temps.length - 2] || 0;
+        
+            const change = latest - prev;
+        
+            document.getElementById("latestTemp").innerText = latest.toFixed(1) + " °C";
+        
+            document.getElementById("tempChange").innerText =
+                (change >= 0 ? "↑ " : "↓ ") + Math.abs(change).toFixed(1) + "°C";
+        
+            document.getElementById("tempDelta").innerText = change.toFixed(1) + " °C";
+        
+            document.getElementById("tempTrend").innerText =
+                change >= 0 ? "Rising" : "Falling";
+        
+            const dupCount = data.filter(d => d.duplicate).length;
+            const total = data.length;
+        
+            const dupRate = total ? (dupCount / total * 100).toFixed(1) : 0;
+        
+            document.getElementById("dupRate").innerText = dupRate + "%";
+        
+            document.getElementById("uniquePct").innerText = (100 - dupRate) + "% Unique";
+            document.getElementById("dupPct").innerText = dupRate + "% Duplicate";
+        
+            document.getElementById("dupBar").style.width = (100 - dupRate) + "%";
+        
+            let status = "Healthy";
+            if (latest > 35) status = "Critical";
+            else if (latest > 27) status = "Warning";
+        
+            document.getElementById("systemStatus").innerText = status;
+        
+            const max = Math.max(...temps);
+            const min = Math.min(...temps);
+        
+            document.getElementById("summary").innerHTML =
+                `Max: ${max.toFixed(1)}°C<br>Min: ${min.toFixed(1)}°C`;
+        
+            const last = data[data.length - 1];
+        
+            document.getElementById("recentActivity").innerHTML =
+                `Event: ${last?.event_type || "None"}<br>Temp: ${latest.toFixed(1)}°C`;
         }
 
         function applyFilter() {
@@ -745,19 +783,18 @@
             if (!canvas) return;
         
             const ctx = canvas.getContext('2d');
-            if (analyticsChart) {
-            analyticsChart.data.labels = labels;
-            analyticsChart.data.datasets[0].data = temps;
-            analyticsChart.update();
-            return;
-        }
         
-            const values = [
-                Math.max(data.total - data.warning_count - data.critical_count, 0),
-                data.warning_count,
-                data.critical_count
-            ];
+            // ✅ destroy correct chart
+            if (alertsChart) alertsChart.destroy();
         
+            // ✅ use REAL events (this is the key fix)
+            const temps = allEvents.map(e => e.temp).filter(Boolean);
+        
+            const normal = temps.filter(t => t < 27).length;
+            const warning = temps.filter(t => t >= 27 && t < 35).length;
+            const critical = temps.filter(t => t >= 35).length;
+        
+            const values = [normal, warning, critical];
             const total = values.reduce((a, b) => a + b, 0);
         
             alertsChart = new Chart(ctx, {
@@ -767,7 +804,6 @@
                     datasets: [{
                         data: values,
                         backgroundColor: ['#22c55e','#f59e0b','#ef4444'],
-                        spacing: 6,
                         borderWidth: 0
                     }]
                 },
@@ -780,14 +816,12 @@
                                 color: 'white',
                                 generateLabels(chart) {
                                     return chart.data.labels.map((label, i) => {
-                                        const value = values[i];
-                                        const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+                                        const percent = total ? ((values[i] / total) * 100).toFixed(1) : 0;
         
                                         return {
                                             text: `${label} (${percent}%)`,
                                             fillStyle: chart.data.datasets[0].backgroundColor[i],
                                             strokeStyle: chart.data.datasets[0].backgroundColor[i],
-                                            fontColor: 'white',
                                             index: i
                                         };
                                     });
