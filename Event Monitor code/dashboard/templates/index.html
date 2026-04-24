@@ -711,30 +711,60 @@
                         hoverOffset: 12
                     }]
                 },
-                options: {
+               options: {
                     cutout: '75%',
                     plugins: {
                         legend: {
                             position: 'right',
-                            labels: { color: 'white', padding: 15 }
+                            labels: {
+                                color: 'white',
+                                padding: 15,
+                                generateLabels(chart) {
+                                    const data = chart.data.datasets[0].data;
+                                    const total = data.reduce((a, b) => a + b, 0);
+                
+                                    return chart.data.labels.map((label, i) => {
+                                        const value = data[i];
+                                        const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+                
+                                        return {
+                                            text: `${label} (${percent}%)`,
+                                            fillStyle: chart.data.datasets[0].backgroundColor[i],
+                                            strokeStyle: chart.data.datasets[0].backgroundColor[i],
+                                            index: i
+                                        };
+                                    });
+                                }
+                            }
                         }
                     }
-                },
+                }
                 plugins: [{
                     id: 'centerText',
                     beforeDraw(chart) {
-                        const { width, height, ctx } = chart;
-                        ctx.restore();
-        
-                        const total = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
-        
-                        ctx.font = "bold 20px Arial";
-                        ctx.fillStyle = "white";
-                        ctx.textAlign = "center";
-                        ctx.fillText("Total", width/2, height/2 - 10);
-                        ctx.fillText(total, width/2, height/2 + 15);
-        
+                        const { ctx, chartArea } = chart;
+                        if (!chartArea) return;
+                
+                        const centerX = (chartArea.left + chartArea.right) / 2;
+                        const centerY = (chartArea.top + chartArea.bottom) / 2;
+                
+                        const data = chart.data.datasets[0].data;
+                        const total = data.reduce((a, b) => a + b, 0);
+                
                         ctx.save();
+                
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                
+                        ctx.font = "14px Arial";
+                        ctx.fillStyle = "#94a3b8";
+                        ctx.fillText("Total", centerX, centerY - 10);
+                
+                        ctx.font = "bold 22px Arial";
+                        ctx.fillStyle = "white";
+                        ctx.fillText(total, centerX, centerY + 12);
+                
+                        ctx.restore();
                     }
                 }]
             });
