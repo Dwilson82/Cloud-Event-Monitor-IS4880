@@ -100,14 +100,14 @@
         .full { grid-column: span 3; }
 
         .big {
-            font-size: 40px;
+            font-size: 32px;
             font-weight: 700;
             margin-top: 8px;
         }
         .card h3 {
-            font-size: 13px;
-            color: #94a3b8;
-            font-weight: 500;
+            font-size: 14px;
+            color: #cdb5f5;
+            font-weight: 600;
             margin-bottom: 6px;
         }
 
@@ -415,7 +415,8 @@
                 <div class="card large-chart">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
-                            <h3 style="margin:0;">Temperature Trend</h3>
+                            
+                            <h3 style="margin:0; font-size:16px font-weight:600,">Temperature Trend</h3>
                             <p class="muted">Live temperature over time</p>
                         </div>
 
@@ -617,7 +618,7 @@
                 const data = await res.json();
                 if (data.error) return;
         
-                // DASHBOARD
+              
                 const dash = document.getElementById('tempChart');
                 if (dash) {
                     const ctx = dash.getContext('2d');
@@ -639,7 +640,7 @@
                     });
                 }
         
-                // ANALYTICS
+             
                 const analytics = document.getElementById('analyticsTempChart');
                 if (analytics) {
                     const ctx = analytics.getContext('2d');
@@ -771,12 +772,14 @@
                     }]
                 },
                 options: {
-                    cutout: '75%',
+                    cutout: '60%',
                     plugins: {
                         legend: {
-                            position: 'right',
+                            position: 'bottom',
                             labels: {
                                 color: 'white',
+                                boxWidth: 12,
+                                padding: 12,
                                 generateLabels(chart) {
                                     return chart.data.labels.map((label, i) => {
                                         const value = values[i];
