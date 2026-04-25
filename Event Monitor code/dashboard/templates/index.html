@@ -440,10 +440,6 @@
             </div>
     
         </div>
-    
-        <div class="card">
-            <div class="card">
-                <h3>Duplicate Rate</h3>
             
                 <div class="big" id="dupRate">--</div>
                 <div class="muted" id="dupLabel">System reliability</div>
@@ -830,8 +826,8 @@
             const temps = allEvents
                 .map(e => Number(e.temp))
                 .filter(t => !isNaN(t));
-        const warn = parseFloat(document.getElementById("warnTemp")?.value) || 27.5;
-        const crit = parseFloat(document.getElementById("critTemp")?.value) || 30;
+        const warn = parseFloat(document.getElementById("warningTemp")?.value) || 27.5;
+        const crit = parseFloat(document.getElementById("criticalTemp")?.value) || 30;
         
         const normal = temps.filter(t => t < warn).length;
         const warning = temps.filter(t => t >= warn && t < crit).length;
@@ -854,7 +850,7 @@
                     cutout: '70%',
                     plugins: {
                         legend: {
-                            position: 'right',
+                            position: 'top',
                             labels: {
                                 color: 'white',
                                 padding: 12
@@ -896,7 +892,7 @@
                     await loadChart();
                     await loadStatus();
                     
-                    loadAlerrtsChart();
+                    loadAlertsChart();
                 }
         
                 document.addEventListener("DOMContentLoaded", () => {
