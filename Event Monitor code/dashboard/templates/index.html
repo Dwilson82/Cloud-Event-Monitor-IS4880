@@ -103,7 +103,6 @@
             font-size: 40px;
             font-weight: 700;
             margin-top: 8px;
-            letter-spacing: -0.5px;
         }
         .card h3 {
             font-size: 13px;
@@ -280,7 +279,21 @@
             align-items: center;
             justify-content: center;
         }
+
+        .small-chart canvas {
+            max-width: 260px;
+            margin: 0 auto;
+        }
+
+        .small-stats {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 12px;
+        }
         
+        .small-stats .big {
+            font-size: 22px;
+        }
     </style>
 </head>
 <body>
@@ -370,9 +383,10 @@
 
         <div id="analytics" class="section">
 
-            <h2>Analytics Overview</h2>
-            <p class="muted">Real-time insights from your system</p>
-
+            <div style="margin-bottom:16px;">
+                <h2 style="margin:0;">Analytics Overview</h2>
+                <p class="muted" style="margin-top:4px;">Real-time insights</p>
+            </div>
     
             <div class="analytics-grid">
                 <div class="card">
@@ -397,7 +411,7 @@
             </div>
 
 
-            <div class="analytics-grid" style="margin-top:12px;">
+            <div class="analytics-grid small-stats">
                 <div class="card">
                     <h3>Max Temperature</h3>
                     <div class="big" id="maxTemp">--</div>
@@ -420,7 +434,7 @@
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:30px;">
                 <h3 style="margin:0;">System Trends</h3>
-                <span class="muted">Live data</span>
+               <span style="color:#22c55e; font-size:13px;">● Live</span>
             </div>
     
             <div class="charts-row">
@@ -441,7 +455,6 @@
 
                 <div class="card small-chart">
                     <h3>Event Distribution</h3>
-                    <p class="muted">Breakdown of events by severity</p>
 
                     <canvas id="alertsChart"></canvas>
                 </div>
