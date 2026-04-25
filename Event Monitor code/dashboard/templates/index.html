@@ -64,9 +64,7 @@
 
         .main {
             flex: 1;
-            padding: 30px 40px;
-            max-width: 1200px;
-            margin: 0 auto;
+            padding: 30px;
         }
 
         .grid {
@@ -74,38 +72,30 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
         }
-        #analytics .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
 
         .card {
             background: linear-gradient(
-                160deg,
-                rgba(30,41,59,0.9),
-                rgba(15,23,42,0.95)
+                145deg,
+                rgba(30,41,59,0.7),
+                rgba(15,23,42,0.9)
             );
-        
-            border-radius: 18px;
-            padding: 22px;
-        
-            border: 1px solid rgba(255,255,255,0.04);
-        
-            box-shadow: 
-                0 8px 25px rgba(0,0,0,0.5),
-                inset 0 1px 0 rgba(255,255,255,0.4);
-        
             backdrop-filter: blur(18px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
 
-            transition: 0.2s ease;
-        }
-
-           
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: all 0.25s ease
+                }
 
         .large { grid-column: span 2; }
         .full { grid-column: span 3; }
 
+        .big {
+            font-size: 36px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
         .card h3 {
             font-size: 14px;
             color: #94a3b8;
@@ -182,7 +172,7 @@
 
         .analytics-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 24px;
         }
 
@@ -231,11 +221,17 @@
             gap: 10px;
             margin-top: 10px;
         }
+        .dup {
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+            animation: pulse 1.5s infinite;
+        }
 
         .card:hover {
-            transform: translateY(-4px);
+            transform: translateY(-6px);
             box-shadow:
-                0 12px 30px rgba(0,0,0,0.6);     
+                0 20px 40px rgba(0,0,0,0.7),
+                0 0 20px rgba(59,130,246,0.15);
         }
 
         .large-chart canvas {
@@ -272,9 +268,6 @@
         
         .small-chart {
             padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
         .card h3 {
@@ -283,24 +276,9 @@
         }
         
         .big {
-            font-size: 40px;
+            font-size: 36px;
             font-weight: 700;
-            margin-top: 10px;
-            letter-spacing: -1px;
         }
-        .glow {
-            text-shadow: 0 0 12px rgba(168,85,247,0.8);
-        }
-        .live-dot {
-            width: 10px;
-            height: 10px;
-            background: #22c55e;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-        #dupBar {
-    transition: width 0.5s ease;
-}
     </style>
 </head>
 <body>
@@ -390,93 +368,89 @@
 
         <div id="analytics" class="section">
 
-        <h1>Analytics</h1>
-        <div class="grid">
+            <h2>Analytics Overview</h2>
+            <p class="muted">Real-time insights from your system</p>
+
     
-            <div class="card">
-                <h3>Latest Temperature</h3>
-                <div class="big glow" id="latestTemp">--</div>
-                <div class="muted" id="tempChange">--</div>
-            </div>
-    
-            <div class="card">
-                <h3>Temperature Change (5 min)</h3>
-                <div class="big" id="tempDelta">--</div>
-                <div class="muted" id="tempTrend">--</div>
-            </div>
-    
-            <div class="card">
-                <h3>Duplicate Rate</h3>
-                <div class="big" id="dupRate">--</div>
-            </div>
-    
-            <div class="card">
-                <h3>System Status</h3>
-                <div class="big" id="analyticsStatus">--</div>
-            </div>
-    
-        </div>
-    
-        <div class="charts-row">
-    
-            <div class="card large-chart">
-                <h3>Temperature Over Time</h3>
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
-                    <div class="live-dot"></div>
-                    <span class="muted">Live</span>
+            <div class="analytics-grid">
+                <div class="card">
+                    <h3>Duplicate Rate</h3>
+                    <p class="muted">System retry behavior</p>
+                    <div class="big" id="dupRate">0%</div>
                 </div>
-    
-                <select id="timeRange" onchange="loadChart()">
-                    <option value="30">Last 30 Minutes</option>
-                    <option value="60">Last 1 Hour</option>
-                </select>
-    
-                <canvas id="analyticsTempChart"></canvas>
+
+                <div class="card">
+                    <h3>Latest Temperature</h3>
+                    <p class="muted">Most recent reading</p>
+                    <div class="big" id="latestTemp">--</div>
+                </div>
+
+                <div class="card">
+                    <h3>Warning Events</h3>
+                    <p class="muted">Above threshold</p>
+                    <div class="big" id="warningCount">0</div>
+                </div>
+
+                <div class="card">
+                    <h3>Critical Events</h3>
+                    <p class="muted">High temperature alerts</p>
+                    <div class="big" id="criticalCount">0</div>
+                </div>
+            </div>
+
+
+            <div class="analytics-grid" style="margin-top:20px;">
+                <div class="card">
+                    <h3>Max Temperature</h3>
+                    <div class="big" id="maxTemp">--</div>
+                </div>
+
+                <div class="card">
+                    <h3>Out-of-Range %</h3>
+                    <div class="big" id="outOfRangePct">0%</div>
+                </div>
+
+                <div class="card">
+                    <h3>Latest Device</h3>
+                    <div class="big" id="latestDevice">--</div>
+                </div>
+
+                <div class="card">
+                    <h3>Last Update Time</h3>
+                    <div class="big" id="lastTime">--</div>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:30px;">
+                <h3 style="margin:0;">System Trends</h3>
+                <span class="muted">Live data</span>
             </div>
     
-            <div class="card small-chart">
-                <h3>Temperature Distribution</h3>
-                <canvas id="alertsChart"></canvas>
-            </div>
+            <div class="charts-row">
+                <div class="card large-chart">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h3 style="margin:0;">Temperature Trend</h3>
+                            <p class="muted">Live temperature over time</p>
+                        </div>
+
+                        <select>
+                            <option>Last 30 minutes</option>
+                        </select>
+                    </div>
+                    <canvas id="analyticsTempChart"></canvas>
     
+                </div>
+
+                <div class="card small-chart">
+                    <h3>Event Distribution</h3>
+                    <p class="muted">Breakdown of events by severity</p>
+
+                    <canvas id="alertsChart"></canvas>
+                </div>
+
+            </div>
         </div>
-            
-                <div class="big" id="dupRate">--</div>
-                <div class="muted" id="dupLabel">System reliability</div>
-            </div>
-    
-            <div style="display:flex; justify-content:space-between;">
-                <div id="uniquePct" style="color:#22c55e;">--</div>
-                <div id="dupPct" style="color:#ef4444;">--</div>
-            </div>
-    
-            <div style="height:8px; background:#111; border-radius:5px; margin-top:10px;">
-                <div id="dupBar" style="height:100%; background:#22c55e; width:50%; border-radius:5px;"></div>
-            </div>
-        </div>
-    
-        <div class="analytics-grid">
-    
-            <div class="card">
-                <h3>Recent Activity</h3>
-                <div id="recentActivity">--</div>
-            </div>
-    
-            <div class="card">
-                <h3>Temperature Summary</h3>
-                <div id="summary">--</div>
-            </div>
-    
-            <div class="card">
-                <h3>Thresholds</h3>
-                <div>🟢 Normal: 18–27°C</div>
-                <div>🟡 Warning: 27–29°C</div>
-                <div>🔴 Critical: >30°C</div>
-            </div>
-    
-        </div>
-    
-    </div>
+
 
         <div id="settings" class="section">
             <div class="settings-grid">
@@ -546,18 +520,13 @@
                 document.getElementById("avg").innerText = (data.avg_temp ?? 0) + " °C";
 
                 const dupRate = data.total > 0 ? ((data.dups / data.total) * 100).toFixed(1) : 0;
-                
-
-                if (dupRate > 20) label = "Unstable";
-                else if (dupRate > 10) label = "Moderate";
-            
                 document.getElementById("dupRate").innerText = dupRate + "%";
                 document.getElementById("warningCount").innerText = data.warning_count ?? 0;
                 document.getElementById("criticalCount").innerText = data.critical_count ?? 0;
                 document.getElementById("maxTemp").innerText = (data.max_temp ?? 0) + " °C";
                 document.getElementById("outOfRangePct").innerText = (data.out_of_range_pct ?? 0) + "%";
 
-                
+                loadAlertsChart(data);
             } catch (err) {
                 console.error("loadMetrics failed:", err);
             }
@@ -639,7 +608,7 @@
                 const data = await res.json();
                 if (data.error) return;
         
-            
+                // DASHBOARD
                 const dash = document.getElementById('tempChart');
                 if (dash) {
                     const ctx = dash.getContext('2d');
@@ -661,22 +630,18 @@
                     });
                 }
         
+                // ANALYTICS
                 const analytics = document.getElementById('analyticsTempChart');
                 if (analytics) {
-                    const range = document.getElementById('timeRange')?.value || "30";
-                    const limit = parseInt(range);
-                    
-                    const labels = data.labels.slice(-limit);
-                    const temps = data.temps.slice(-limit);
                     const ctx = analytics.getContext('2d');
                     if (analyticsChart) analyticsChart.destroy();
         
                     analyticsChart = new Chart(ctx, {
                         type: 'line',
                         data: {
-                            labels: labels,
+                            labels: data.labels,
                             datasets: [{
-                                data: temps,
+                                data: data.temps,
                                 borderColor: '#a855f7',
                                 backgroundColor: 'rgba(168,85,247,0.15)',
                                 pointRadius: 4,
@@ -703,14 +668,10 @@
                 const res = await fetch('/api/events');
                 const data = await res.json();
                 if (data.error) return;
-        
+
                 allEvents = data;
-        
                 render(allEvents);
-                updateAnalytics(allEvents);
-        
-                loadAlertsChart();
-        
+                updateAnalytics();
             } catch (err) {
                 console.error("loadData failed:", err);
             }
@@ -753,54 +714,13 @@
             document.getElementById("tableBody").innerHTML = html;
         }
 
-        function updateAnalytics(data) {
+        function updateAnalytics() {
+            if (!allEvents.length) return;
 
-            const temps = data.map(d => d.temp).filter(Boolean);
-        
-            const latest = temps[temps.length - 1] || 0;
-            const prev = temps[temps.length - 2] || 0;
-        
-            const change = latest - prev;
-        
-            document.getElementById("latestTemp").innerText = latest.toFixed(1) + " °C";
-        
-            document.getElementById("tempChange").innerText =
-                (change >= 0 ? "↑ " : "↓ ") + Math.abs(change).toFixed(1) + "°C";
-        
-            document.getElementById("tempDelta").innerText = change.toFixed(1) + " °C";
-        
-            document.getElementById("tempTrend").innerText =
-                change >= 0 ? "Rising" : "Falling";
-        
-            const dupCount = data.filter(d => d.duplicate).length;
-            const total = data.length;
-        
-            const dupRate = total ? (dupCount / total * 100).toFixed(1) : 0;
-        
-            document.getElementById("dupRate").innerText = dupRate + "%";
-        
-        
-            let status = "Healthy";
-            if (latest > 35) status = "Critical";
-            else if (latest > 27) status = "Warning";
-        
-            document.getElementById("analyticsStatus").innerText = status;
-        
-            const max = Math.max(...temps);
-            const min = Math.min(...temps);
-            const avg = temps.reduce((a,b)=>a+b,0)/temps.length;
-
-            document.getElementById("summary").innerHTML = `
-            Max: ${max.toFixed(1)}°C<br>
-            Min: ${min.toFixed(1)}°C<br>
-            Avg: ${avg.toFixed(1)}°C<br>
-            Events: ${temps.length}
-            `;
-        
-            const last = data[data.length - 1];
-        
-            document.getElementById("recentActivity").innerHTML =
-                `Event: ${last?.event_type || "None"}<br>Temp: ${latest.toFixed(1)}°C`;
+            const latest = allEvents[0];
+            document.getElementById("latestDevice").innerText = latest.device_id || "--";
+            document.getElementById("latestTemp").innerText = (latest.temp ?? '--') + " °C";
+            document.getElementById("lastTime").innerText = latest.time;
         }
 
         function applyFilter() {
@@ -815,26 +735,20 @@
             }
         }
 
-        function loadAlertsChart() {
+        function loadAlertsChart(data) {
             const canvas = document.getElementById('alertsChart');
             if (!canvas) return;
         
             const ctx = canvas.getContext('2d');
-        
             if (alertsChart) alertsChart.destroy();
         
-            const temps = allEvents
-                .map(e => Number(e.temp))
-                .filter(t => !isNaN(t));
-        const warn = parseFloat(document.getElementById("warningTemp")?.value) || 27.5;
-        const crit = parseFloat(document.getElementById("criticalTemp")?.value) || 30;
+            const values = [
+                Math.max(data.total - data.warning_count - data.critical_count, 0),
+                data.warning_count,
+                data.critical_count
+            ];
         
-        const normal = temps.filter(t => t < warn).length;
-        const warning = temps.filter(t => t >= warn && t < crit).length;
-        const critical = temps.filter(t => t >= crit).length;
-                
-            const values = [normal, warning, critical];
-            const total = temps.length;
+            const total = values.reduce((a, b) => a + b, 0);
         
             alertsChart = new Chart(ctx, {
                 type: 'doughnut',
@@ -843,17 +757,31 @@
                     datasets: [{
                         data: values,
                         backgroundColor: ['#22c55e','#f59e0b','#ef4444'],
+                        spacing: 6,
                         borderWidth: 0
                     }]
                 },
                 options: {
-                    cutout: '70%',
+                    cutout: '75%',
                     plugins: {
                         legend: {
-                            position: 'top',
+                            position: 'right',
                             labels: {
                                 color: 'white',
-                                padding: 12
+                                generateLabels(chart) {
+                                    return chart.data.labels.map((label, i) => {
+                                        const value = values[i];
+                                        const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+        
+                                        return {
+                                            text: `${label} (${percent}%)`,
+                                            fillStyle: chart.data.datasets[0].backgroundColor[i],
+                                            strokeStyle: chart.data.datasets[0].backgroundColor[i],
+                                            fontColor: 'white',
+                                            index: i
+                                        };
+                                    });
+                                }
                             }
                         }
                     }
@@ -864,8 +792,8 @@
                         const { ctx, chartArea } = chart;
                         if (!chartArea) return;
         
-                        const x = (chartArea.left + chartArea.right) / 2;
-                        const y = (chartArea.top + chartArea.bottom) / 2;
+                        const centerX = (chartArea.left + chartArea.right) / 2;
+                        const centerY = (chartArea.top + chartArea.bottom) / 2;
         
                         ctx.save();
                         ctx.textAlign = "center";
@@ -873,11 +801,11 @@
         
                         ctx.font = "14px Arial";
                         ctx.fillStyle = "#94a3b8";
-                        ctx.fillText("Events", x, y - 10);
+                        ctx.fillText("Total", centerX, centerY - 10);
         
-                        ctx.font = "bold 26px Arial";
+                        ctx.font = "bold 22px Arial";
                         ctx.fillStyle = "white";
-                        ctx.fillText(total, x, y + 10);
+                        ctx.fillText(total, centerX, centerY + 12);
         
                         ctx.restore();
                     }
@@ -886,13 +814,11 @@
         }
         
                 async function refreshAll() {
-                    await loadSettings();
-                    await loadData();
                     await loadMetrics();
+                    await loadData();
                     await loadChart();
                     await loadStatus();
-                    
-                    loadAlertsChart();
+                    await loadSettings();
                 }
         
                 document.addEventListener("DOMContentLoaded", () => {
