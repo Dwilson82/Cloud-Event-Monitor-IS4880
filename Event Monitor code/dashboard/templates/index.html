@@ -245,9 +245,6 @@
             height: 300px !important;
         }
 
-        .small-chart canvas {
-            height: 300px !important;
-        }
         #analytics h2 {
             margin-bottom: 5px;
         }
@@ -279,11 +276,11 @@
             align-items: column;
             justify-content: center;
         }
-
         .small-chart canvas {
-            max-width: 260px;
-            margin: 0 auto;
+            width: 100% !important;
+            height: 300px !important;
         }
+
 
         .small-stats {
             grid-template-columns: repeat(4, 1fr);
@@ -410,30 +407,7 @@
                 </div>
             </div>
 
-
-            <div class="analytics-grid small-stats">
-                <div class="card">
-                    <h3>Max Temperature</h3>
-                    <div class="big" id="maxTemp">--</div>
-                </div>
-
-                <div class="card">
-                    <h3>Out-of-Range %</h3>
-                    <div class="big" id="outOfRangePct">0%</div>
-                </div>
-
-                <div class="card">
-                    <h3>Latest Device</h3>
-                    <div class="big" id="latestDevice">--</div>
-                </div>
-
-                <div class="card">
-                    <h3>Last Update Time</h3>
-                    <div class="big" id="lastTime">--</div>
-                </div>
-            </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:30px;">
-                <h3 style="margin:0;">System Trends</h3>
                <span style="color:#22c55e; font-size:13px;">● Live</span>
             </div>
     
@@ -463,6 +437,28 @@
 
             </div>
         </div>
+
+           <div class="analytics-grid small-stats">
+                <div class="card">
+                    <h3>Max Temperature</h3>
+                    <div class="big" id="maxTemp">--</div>
+                </div>
+
+                <div class="card">
+                    <h3>Out-of-Range %</h3>
+                    <div class="big" id="outOfRangePct">0%</div>
+                </div>
+
+                <div class="card">
+                    <h3>Latest Device</h3>
+                    <div class="big" id="latestDevice">--</div>
+                </div>
+
+                <div class="card">
+                    <h3>Last Update Time</h3>
+                    <div class="big" id="lastTime">--</div>
+                </div>
+            </div>
 
 
         <div id="settings" class="section">
